@@ -1,0 +1,20 @@
+LIBRARY HookDll
+
+EXPORTS
+	SetHook @1
+	SetF3 @2
+	Set0 @3
+	Set1 @4
+	Set2 @5
+	Set3 @6
+	Set4 @7
+	Set5 @8
+	Set6 @9
+	Set7 @10
+	SetF1 @11
+	SetF6 @12
+	ShowMsg @13
+	SetM @14
+
+SECTIONS
+	DllSec READ WRITE SHARED
