@@ -1,0 +1,425 @@
+/*
+     File: RippleModel.m
+ Abstract: Ripple model class that simulates the ripple effect.
+  Version: 1.0
+ 
+ Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
+ Inc. ("Apple") in consideration of your agreement to the following
+ terms, and your use, installation, modification or redistribution of
+ this Apple software constitutes acceptance of these terms.  If you do
+ not agree with these terms, please do not use, install, modify or
+ redistribute this Apple software.
+ 
+ In consideration of your agreement to abide by the following terms, and
+ subject to these terms, Apple grants you a personal, non-exclusive
+ license, under Apple's copyrights in this original Apple software (the
+ "Apple Software"), to use, reproduce, modify and redistribute the Apple
+ Software, with or without modifications, in source and/or binary forms;
+ provided that if you redistribute the Apple Software in its entirety and
+ without modifications, you must retain this notice and the following
+ text and disclaimers in all such redistributions of the Apple Software.
+ Neither the name, trademarks, service marks or logos of Apple Inc. may
+ be used to endorse or promote products derived from the Apple Software
+ without specific prior written permission from Apple.  Except as
+ expressly stated in this notice, no other rights or licenses, express or
+ implied, are granted by Apple herein, including but not limited to any
+ patent rights that may be infringed by your derivative works or by other
+ works in which the Apple Software may be incorporated.
+ 
+ The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
+ MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
+ THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
+ OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
+ 
+ IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
+ OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
+ MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
+ AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
+ STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ 
+ Copyright (C) 2013 Apple Inc. All Rights Reserved.
+ 
+ */
+
+#import "RippleModel.h"
+
+@interface RippleModel () {
+    unsigned int screenWidth;
+    unsigned int screenHeight;
+    unsigned int poolWidth;     // 水平方向所要绘制的网格数
+    unsigned int poolHeight;    // 垂直方向所要绘制的网格数
+    unsigned int touchRadius;   // 手指触摸屏幕后初始的水波半径 
+    
+    unsigned int meshFactor;    // 网格宽度（iPhone上默认设置为4；iPad上默认设置为8）
+    
+    float texCoordFactorS;      // 用于将纹理坐标规格化的水平方向上的单位宽度
+    float texCoordOffsetS;      // 纹理水平方向的偏移；此偏移由于可能要针对高度做规格化而产生的位置偏差
+    float texCoordFactorT;      // 用于将纹理坐标规格化的垂直方向上的单位高度
+    float texCoordOffsetT;      // 纹理垂直方向的偏移；此偏移由于可能要针对宽度做规格化而产生的位置偏差
+    
+    // ripple coefficients
+    float *rippleCoeff;         // 水波系数表，实际长度为float[2*touchRadius+1][2*touchRadius+1]
+    
+    // ripple simulation buffers
+    float *rippleSource;        // 源水波
+    float *rippleDest;          // 目的水波
+    
+    // data passed to GL
+    GLfloat *rippleVertices;    // 水波顶点坐标；每个元素为struct {float x, y;};类型
+    GLfloat *rippleTexCoords;   // 水波纹理坐标；每个元素为struct {float s, t;};类型
+    GLushort *rippleIndicies;    
+}
+
+@end
+
+@implementation RippleModel
+
+- (void)initRippleMap
+{
+    // +2 for padding the border
+    memset(rippleSource, 0, (poolWidth+2)*(poolHeight+2)*sizeof(float));
+    memset(rippleDest, 0, (poolWidth+2)*(poolHeight+2)*sizeof(float));
+}
+
+// 在以(2 * touchRadius + 1)为边长的正方形的内切圆内计算各个像素点所对应的水波振幅系数
+- (void)initRippleCoeff
+{
+    // 一共(2 * touchRadius + 1)行
+    for (int y=0; y <= 2*touchRadius; y++)
+    {
+        // 每行有(2 * touchRadius + 1)个点
+        for (int x=0; x <= 2*touchRadius; x++)
+        {
+            // 当前点到圆心(touchRadius, touchRadius)的距离。
+            // 若当前点正好在圆心上，则distance为0。
+            float distance = sqrt((x-touchRadius)*(x-touchRadius)+(y-touchRadius)*(y-touchRadius));
+            
+            if (distance <= touchRadius)
+            {
+                // 若当前点在内切圆的范围内，则计算该点的系数。
+                float factor = distance / touchRadius;  // 该因子的取值范围是[0, 1]
+
+                // goes from -512 -> 0
+                // 赋值给当前点的系数。系数的确定是通过由中心点(touchRadius, touchRadius)作为起始点，在正方形内切圆范围内作cos波形扩散。
+                // 使用余弦是因为它是偶函数，正好与y轴（这里表示水波的振幅）对称。这里的余弦函数的取值范围是[-1, 1]，并且正好是半个周期，由于distance的范围是[0, 1]。
+                // 这里可以看到使用-cos(factor * π)因为在起始点处（也就是手指点下去的那一点），初始波的振幅是向下（负方向）绝对值最大的。
+                // 然后获得的振幅加1，再乘以256，使得最终值定格在[-512, 0]，用于量化。
+                rippleCoeff[y*(touchRadius*2+1)+x] = -(cos(factor*M_PI)+1.f) * 256.f;
+            }
+            else 
+            {
+                // 内切圆边界外的系数设为0
+                rippleCoeff[y*(touchRadius*2+1)+x] = 0.f;
+            }
+        }
+    }    
+}
+
+// 初始化网格
+- (void)initMesh
+{
+    // 先针对网格初始化顶点坐标以及纹理坐标
+    for (int i=0; i<poolHeight; i++)
+    {
+        for (int j=0; j<poolWidth; j++)
+        {
+            // v[i, j].x = j * (2 / (w - 1)) - 1; 将屏幕横坐标规格化到[-1, 1]，第0列时为-1
+            rippleVertices[(i*poolWidth+j)*2+0] = -1.f + j*(2.f/(poolWidth-1));
+            // v[i, j].y = 1 - i * (2 / (h - 1)); 将屏幕纵坐标规格化到[-1, 1]，第h-1行时为-1
+            rippleVertices[(i*poolWidth+j)*2+1] = 1.f - i*(2.f/(poolHeight-1));
+
+            // 这里的纹理宽高为640x480，而显示的时候以屏幕宽高（竖屏）方式展示，因此这里需要将纹理坐标做一个转置
+            // 使得s为垂直方向，t为水平方向。以下分别为水波网格中各个顶点设置相应的纹理坐标
+            rippleTexCoords[(i*poolWidth+j)*2+0] = (float)i/(poolHeight-1) * texCoordFactorS + texCoordOffsetS;
+            rippleTexCoords[(i*poolWidth+j)*2+1] = (1.f - (float)j/(poolWidth-1)) * texCoordFactorT + texCoordFactorT;
+        }            
+    }
+    
+    // 设置水波顶点索引；这里采用GL_TRIANGLE_STRIP方式渲染
+    // 由于iOS系统所支持的GPU支持前一条带的最后一点重复一次，后一条带第一个点重复一次能形成新的一个三角条带，所以以下的emit extra index就是做这个操作
+    unsigned int index = 0;
+    for (int i=0; i<poolHeight-1; i++)
+    {
+        for (int j=0; j<poolWidth; j++)
+        {
+            // 对于偶数行
+            if (i%2 == 0)
+            {
+                // emit extra index to create degenerate triangle
+                if (j == 0)
+                {
+                    // 发射额外的索引来创建退化的三角形（多取一次(i, j)这一点）
+                    rippleIndicies[index] = i*poolWidth+j;
+                    index++;                    
+                }
+                
+                // 取(i, j)点的位置
+                rippleIndicies[index] = i*poolWidth+j;
+                index++;
+                // 取(i+1, j)点的位置
+                rippleIndicies[index] = (i+1)*poolWidth+j;
+                index++;
+                
+                // emit extra index to create degenerate triangle
+                if (j == (poolWidth-1))
+                {
+                    // 发射额外的索引来创建退化的三角形（多取一次(i+1, j)这一点）
+                    rippleIndicies[index] = (i+1)*poolWidth+j;
+                    index++;                    
+                }
+            }
+            else    // 对于奇数行
+            {
+                // emit extra index to create degenerate triangle
+                if (j == 0)
+                {
+                    // 发射额外的索引来创建退化的三角形（多取一次(i+1, j)这一点）
+                    rippleIndicies[index] = (i+1)*poolWidth+j;
+                    index++;
+                }
+                
+                // 取(i+1, j)点的位置
+                rippleIndicies[index] = (i+1)*poolWidth+j;
+                index++;
+                // 取(i, j)点的位置
+                rippleIndicies[index] = i*poolWidth+j;
+                index++;
+                
+                // emit extra index to create degenerate triangle
+                if (j == (poolWidth-1))
+                {
+                    // 发射额外的索引来创建退化的三角形（多取一次(i, j)这一点）
+                    rippleIndicies[index] = i*poolWidth+j;
+                    index++;
+                }
+            }
+        }
+    }
+}
+
+- (GLfloat *)getVertices
+{
+    return rippleVertices;
+}
+
+- (GLfloat *)getTexCoords
+{
+    return rippleTexCoords;
+}
+
+- (GLushort *)getIndices
+{
+    return rippleIndicies;
+}
+
+- (unsigned int)getVertexSize
+{
+    return poolWidth*poolHeight*2*sizeof(GLfloat);
+}
+
+- (unsigned int)getIndexSize
+{
+    return (poolHeight-1)*(poolWidth*2+2)*sizeof(GLushort);
+}
+
+- (unsigned int)getIndexCount
+{
+    return [self getIndexSize]/sizeof(*rippleIndicies);
+}
+
+- (void)freeBuffers
+{
+    free(rippleCoeff);
+    
+    free(rippleSource);
+    free(rippleDest);
+    
+    free(rippleVertices);
+    free(rippleTexCoords);
+    free(rippleIndicies);    
+}
+
+- (id)initWithScreenWidth:(unsigned int)width
+             screenHeight:(unsigned int)height
+               meshFactor:(unsigned int)factor
+              touchRadius:(unsigned int)radius
+             textureWidth:(unsigned int)texWidth
+            textureHeight:(unsigned int)texHeight
+{
+    self = [super init];
+    
+    if (self)
+    {
+        screenWidth = width;
+        screenHeight = height;
+        meshFactor = factor;
+        poolWidth = width/meshFactor;
+        poolHeight = height/meshFactor;
+        touchRadius = radius;
+        
+        // 将纹理坐标规格化
+        // 这里的纹理宽高为640x480，而显示的时候以屏幕宽高（竖屏）方式展示，因此后期处理需要将纹理坐标做一个转置
+        if ((float)screenHeight/screenWidth < (float)texWidth/texHeight)
+        {            
+            texCoordFactorS = (float)(texHeight*screenHeight)/(screenWidth*texWidth);            
+            texCoordOffsetS = (1.f - texCoordFactorS)/2.f;
+            
+            texCoordFactorT = 1.f;
+            texCoordOffsetT = 0.f;
+        }
+        else
+        {
+            texCoordFactorS = 1.f;
+            texCoordOffsetS = 0.f;
+            
+            texCoordFactorT = (float)(screenWidth*texWidth)/(texHeight*screenHeight);
+            texCoordOffsetT = (1.f - texCoordFactorT)/2.f;
+        }
+        
+        rippleCoeff = (float *)malloc((touchRadius*2+1)*(touchRadius*2+1)*sizeof(float));
+        
+        // +2 for padding the border
+        rippleSource = (float*)malloc((poolWidth+2)*(poolHeight+2)*sizeof(float));
+        rippleDest = (float*)malloc((poolWidth+2)*(poolHeight+2)*sizeof(float));
+        
+        rippleVertices = (GLfloat*)malloc(poolWidth*poolHeight*2*sizeof(GLfloat));
+        rippleTexCoords = (GLfloat*)malloc(poolWidth*poolHeight*2*sizeof(GLfloat));
+        rippleIndicies = (GLushort*)malloc((poolHeight-1)*(poolWidth*2+2)*sizeof(GLushort));
+        
+        if (!rippleCoeff || !rippleSource || !rippleDest || 
+            !rippleVertices || !rippleTexCoords || !rippleIndicies)
+        {
+            [self freeBuffers];
+            return nil;
+        }
+        
+        [self initRippleMap];
+        
+        [self initRippleCoeff];
+        
+        [self initMesh];
+    }
+    
+    return self;
+}
+
+// 每次刷新视图时调用此方法
+- (void)runSimulation
+{
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    
+    // first pass for simulation buffers...
+    // 第一遍，用于计算水波模拟的目标值。以下操作一共执行poolHeight行
+    dispatch_apply(poolHeight, queue, ^(size_t y) {
+        // y从0到poolHeight-1
+        for (int x=0; x<poolWidth; x++)
+        {
+            // * - denotes current pixel
+            //
+            //       a 
+            //     c * d
+            //       b 
+            
+            // +1 to both x/y values because the border is padded
+            // 这里，当前点的坐标为(x+1, y+1)
+            float a = rippleSource[(y)*(poolWidth+2) + x+1];
+            float b = rippleSource[(y+2)*(poolWidth+2) + x+1];
+            float c = rippleSource[(y+1)*(poolWidth+2) + x];
+            float d = rippleSource[(y+1)*(poolWidth+2) + x+2];
+            
+            // 这里的(a + b + c + d) / 2 - rippleDest其实是指：
+            // avg = (a + b + c + d) / 4; result = avg + (avg - rippleDest)
+            // 如果当前水波系数值比均值小，那么水波将从平均位置上升
+            // 如果当前水波系数值比均值大，那么水波将从平均位置下降
+            float result = (a + b + c + d)/2.f - rippleDest[(y+1)*(poolWidth+2) + x+1];
+
+            result -= result/32.f;
+            
+            rippleDest[(y+1)*(poolWidth+2) + x+1] = result;
+        }            
+    });
+    
+    // second pass for modifying texture coord
+    // 第二遍，用于计算纹理坐标进行采样。以下操作一共执行poolHeight行
+    dispatch_apply(poolHeight, queue, ^(size_t y) {
+        // y从0到poolHeight-1
+        for (int x=0; x<poolWidth; x++)
+        {
+            // * - denotes current pixel
+            //
+            //       a
+            //     c * d
+            //       b
+            
+            // +1 to both x/y values because the border is padded
+            // 这里，当前点的坐标为(x+1, y+1)
+            float a = rippleDest[(y)*(poolWidth+2) + x+1];
+            float b = rippleDest[(y+2)*(poolWidth+2) + x+1];
+            float c = rippleDest[(y+1)*(poolWidth+2) + x];
+            float d = rippleDest[(y+1)*(poolWidth+2) + x+2];
+            
+            // 所以这里除以2048再做一次针对纹理坐标偏移的规格化（512 * 4）
+            // 这里纹理是被转置90度的。b-a表征了横向水波的起伏趋势；
+            // c-d表征了纵向水波的起伏趋势；这里a与b以及c与d可以相互交换，即符号相反也没问题
+            float s_offset = ((b - a) / 2048.f);
+            float t_offset = ((c - d) / 2048.f);
+            
+            // clamp
+            // 将纹理水平与垂直方向的偏移都确保在[-0.5, 0.5]范围内
+            s_offset = (s_offset < -0.5f) ? -0.5f : s_offset;
+            t_offset = (t_offset < -0.5f) ? -0.5f : t_offset;
+            s_offset = (s_offset > 0.5f) ? 0.5f : s_offset;
+            t_offset = (t_offset > 0.5f) ? 0.5f : t_offset;
+            
+            // 获取当前正常的纹理坐标
+            float s_tc = (float)y/(poolHeight-1) * texCoordFactorS + texCoordOffsetS;
+            float t_tc = (1.f - (float)x/(poolWidth-1)) * texCoordFactorT + texCoordOffsetT;
+            
+            // 真正获取所要采样的纹理坐标
+            rippleTexCoords[(y*poolWidth+x)*2+0] = s_tc + s_offset;
+            rippleTexCoords[(y*poolWidth+x)*2+1] = t_tc + t_offset;
+        }
+    });
+    
+    // 这一步用来交换源水波与目的水波，使得当前的目的水波将作为后一帧的源水波
+    float *pTmp = rippleDest;
+    rippleDest = rippleSource;
+    rippleSource = pTmp;    
+}
+
+// 在手指点的位置处设置rippleSource
+- (void)initiateRippleAtLocation:(CGPoint)location
+{
+    // 当前位置所对应的网格索引
+    unsigned int xIndex = (unsigned int)((location.x / screenWidth) * poolWidth);
+    unsigned int yIndex = (unsigned int)((location.y / screenHeight) * poolHeight);
+    
+    // 以当前位置为圆心，touchRadius为半径，根据水波系数设置水波源
+    for (int y=(int)yIndex-(int)touchRadius; y<=(int)yIndex+(int)touchRadius; y++)
+    {
+        for (int x=(int)xIndex-(int)touchRadius; x<=(int)xIndex+(int)touchRadius; x++)
+        {
+            // 仅对在网格区域范围内的水波系数和水波源进行操作
+            if (x>=0 && x<poolWidth &&
+                y>=0 && y<poolHeight)
+            {
+                // +1 to both x/y values because the border is padded
+                // 以(xIndex - touchRadius, yIndex - touchRadius)作为起始点，依次获取这个圆范围内的每个点相应的水波系数
+                // 这个获取顺序与初始化水波的位置顺序一致
+                // 随后，将这些系数依次映射到水波源相应的网格位置中，并与原来的水波系数相加
+                rippleSource[(poolWidth+2)*(y+1)+x+1] += rippleCoeff[(y-(yIndex-touchRadius))*(touchRadius*2+1)+x-(xIndex-touchRadius)];   
+            }
+        }
+    }    
+}
+
+- (void)dealloc
+{
+    [self freeBuffers];
+}
+
+@end
