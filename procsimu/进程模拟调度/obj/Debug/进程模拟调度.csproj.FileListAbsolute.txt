@@ -1,0 +1,9 @@
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\进程模拟调度.csprojResolveAssemblyReference.cache
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\进程模拟调度.csproj.GenerateResource.Cache
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\SimuProcessSchd.SettingDialog.resources
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\SimuProcessSchd.SimuDialog.resources
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\SimuProcessSchd.Properties.Resources.resources
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\bin\Debug\SimuProcessSchd.exe
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\bin\Debug\SimuProcessSchd.pdb
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\SimuProcessSchd.exe
+Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Debug\SimuProcessSchd.pdb
