@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ccElevatorSystem", "ccElevatorSystem\ccElevatorSystem.vcxproj", "{A75975BE-E99F-4A7C-AD0F-84AED0334618}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B956A4EE-30C8-439F-8D49-C6A488B4F08C} = {B956A4EE-30C8-439F-8D49-C6A488B4F08C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ccGui", "..\ccGui\ccGui.vcxproj", "{B956A4EE-30C8-439F-8D49-C6A488B4F08C}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 3
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://bajdcc.visualstudio.com/defaultcollection
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = ccElevatorSystem\\ccElevatorSystem.vcxproj
+		SccProjectName1 = ccElevatorSystem
+		SccLocalPath1 = ccElevatorSystem
+		SccProjectUniqueName2 = ..\\ccGui\\ccGui.vcxproj
+		SccProjectName2 = ../ccGui
+		SccLocalPath2 = ..\\ccGui
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A75975BE-E99F-4A7C-AD0F-84AED0334618}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A75975BE-E99F-4A7C-AD0F-84AED0334618}.Debug|Win32.Build.0 = Debug|Win32
+		{A75975BE-E99F-4A7C-AD0F-84AED0334618}.Release|Win32.ActiveCfg = Release|Win32
+		{A75975BE-E99F-4A7C-AD0F-84AED0334618}.Release|Win32.Build.0 = Release|Win32
+		{B956A4EE-30C8-439F-8D49-C6A488B4F08C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B956A4EE-30C8-439F-8D49-C6A488B4F08C}.Debug|Win32.Build.0 = Debug|Win32
+		{B956A4EE-30C8-439F-8D49-C6A488B4F08C}.Release|Win32.ActiveCfg = Release|Win32
+		{B956A4EE-30C8-439F-8D49-C6A488B4F08C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
