@@ -1,0 +1,107 @@
+.exlist {
+    padding: 10px 10px 10px 10px;
+}
+
+.exlist-body {
+    text-align: center;
+    padding: 20px 10px 10px 10px;
+}
+
+.dialog-song {
+    font-family: Arial;
+}
+
+.dialog-logo {
+    position: relative;
+    margin-top: -15px;
+    float: right;
+    padding-top: 6px;
+}
+
+.dialog-logo a {
+    display: block;
+    text-indent: -999px;
+    overflow: hidden;
+    width: 148px;
+    height: 55px;
+    background: url("../images/logo.png") no-repeat;
+    background-color: #999;
+}
+
+.dialog-info {
+    border-bottom: 1px solid #d7e9f5;
+    padding: 10px 0 15px;
+}
+
+.dialog-song {
+    font-size: 22px;
+    vertical-align: middle;
+    font-weight: bold;
+}
+
+.dialog-author {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.dialog-c9 {
+    color: #999;
+    font-weight: normal;
+}
+
+.dialog-ps {
+    padding-top: 6px;
+    width: 50px;
+    float: left;
+    color: #999;
+    font-size: 14px;
+    font-family: Arial;
+    line-height: 20px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: normal;
+}
+
+.dialog-download {
+    padding-top: 10px;
+}
+
+.dialog-download .rate .li {
+    padding: 10px 10px 10px 0;
+    clear: both;
+    line-height: 10px;
+}
+
+.dialog-download .rate .li > label {
+    display: block;
+    margin: 0 0 0 0;
+}
+
+.dialog-download .rate .ul {
+    overflow: hidden;
+    zoom: 1;
+    margin-right: 15px;
+    color: #333;
+}
+
+.dialog-download .rate-title {
+    display: inline-block;
+    width: 90px;
+}
+
+.dialog-download .low-rate .rate-title {
+    font-weight: normal;
+}
+
+.dialog-download .high-rate .rate-title {
+    font-weight: bold;
+}
+
+.dialog-download .low-rate, .dialog-download .high-rate {
+    cursor: default;
+    position: relative;
+}
+
+.clearfix {
+    zoom: 1;
+}
