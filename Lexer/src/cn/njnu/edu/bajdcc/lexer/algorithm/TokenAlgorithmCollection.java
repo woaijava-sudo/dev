@@ -1,11 +1,13 @@
-package cn.njnu.edu.bajdcc;
+package cn.njnu.edu.bajdcc.lexer.algorithm;
 
 import java.util.ArrayList;
 
 /**
- * @author bajdcc 抽取单词算法集合（包含数字、字符串等）
+ * 用于抽取单词的算法集合（包含数字、字符串等）
+ * 
+ * @author bajdcc
  */
-public class TokenAlgoritemCollection {
+public class TokenAlgorithmCollection {
 	private ArrayList<ITokenAlgorithm> arrAlgorithms = new ArrayList<ITokenAlgorithm>();
 
 	public void attach(ITokenAlgorithm alg) {
@@ -16,9 +18,11 @@ public class TokenAlgoritemCollection {
 		arrAlgorithms.remove(alg);
 	}
 
-	public void scan(ITokenVisitor visitor) {
+	public boolean scan(ITokenVisitor visitor) {
 		for (ITokenAlgorithm alg : arrAlgorithms) {
-			alg.accept(visitor);
+			if (alg.accept(visitor))
+				return true;
 		}
+		return false;
 	}
 }
