@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.error;
+package priv.bajdcc.lexer.error;
 
 /**
  * 错误处理器接口

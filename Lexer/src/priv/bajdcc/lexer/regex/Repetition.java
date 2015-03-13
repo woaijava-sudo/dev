@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 /**
  * Ñ­»·¹¦ÄÜ

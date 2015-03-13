@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.algorithm;
+package priv.bajdcc.lexer.algorithm;
 
 /**
  * 检测/读取单词的算法接口

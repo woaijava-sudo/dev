@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 /**
  * 正则表达式部件接口（父类）

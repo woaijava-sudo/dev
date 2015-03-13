@@ -1,10 +1,10 @@
-package cn.njnu.edu.bajdcc.lexer;
+package priv.bajdcc.lexer.token;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.njnu.edu.bajdcc.lexer.algorithm.ITokenVisitor;
-import cn.njnu.edu.bajdcc.lexer.algorithm.TokenAlgorithmCollection;
+import priv.bajdcc.lexer.algorithm.ITokenVisitor;
+import priv.bajdcc.lexer.algorithm.TokenAlgorithmCollection;
 
 /**
  * ´Ê·¨·ÖÎöÆ÷

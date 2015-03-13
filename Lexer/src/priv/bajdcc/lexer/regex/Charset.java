@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 import java.util.ArrayList;
 
@@ -36,9 +36,39 @@ public class Charset implements IRegexComponent {
 		END
 	}
 
+	/**
+	 * ×Ö·û¼¯ÀàÐÍ£¨Æ¥Åä×Ö·û£¬Æ¥ÅäÊ×£¬Æ¥ÅäÄ©£©
+	 */
+	public CharacterType kChar = CharacterType.NORMAL;
+
 	@Override
 	public void Visit(IRegexComponentVisitor visitor) {
 		visitor.visitBegin(this);
-		visitor.visitEnd(this);		
+		visitor.visitEnd(this);
+	}
+
+	/**
+	 * Ìí¼Ó·¶Î§
+	 * 
+	 * @param begin
+	 *            ÉÏÏÞ
+	 * @param end
+	 *            ÏÂÏÞ
+	 */
+	public void addRange(char begin, char end) {
+		if (begin > end) {
+			end = begin;
+		}
+		arrPositiveBounds.add(new CharacterRange(begin, end));
+	}
+
+	/**
+	 * Ìí¼Ó×Ö·û
+	 * 
+	 * @param ch
+	 *            ×Ö·û
+	 */
+	public void addChar(char ch) {
+		arrPositiveBounds.add(new CharacterRange(ch, ch));
 	}
 }

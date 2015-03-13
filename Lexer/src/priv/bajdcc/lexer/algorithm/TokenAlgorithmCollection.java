@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.algorithm;
+package priv.bajdcc.lexer.algorithm;
 
 import java.util.ArrayList;
 

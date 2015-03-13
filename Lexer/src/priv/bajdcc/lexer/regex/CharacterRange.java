@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 /**
  * ×Ö·û·¶Î§
@@ -16,4 +16,13 @@ public class CharacterRange {
 	 * ÉÏÏÞ£¨°üº¬£©
 	 */
 	public char chUpperBound = 0;
+	
+	public CharacterRange() {
+		
+	}
+	
+	public CharacterRange(char lower, char upper) {
+		chLowerBound = lower;
+		chUpperBound = upper;
+	}
 }

@@ -1,7 +1,9 @@
-package cn.njnu.edu.bajdcc.lexer;
+package priv.bajdcc.lexer.main;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+
+import priv.bajdcc.lexer.token.Lexer;
 
 public class Main {
 

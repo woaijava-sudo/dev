@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 /**
  * 基于正则表达式组件的访问接口（Visitor模式）

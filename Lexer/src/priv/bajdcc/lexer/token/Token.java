@@ -1,6 +1,6 @@
-package cn.njnu.edu.bajdcc.lexer;
+package priv.bajdcc.lexer.token;
 
-import cn.njnu.edu.bajdcc.lexer.TokenUtility.TokenType;
+import priv.bajdcc.lexer.token.TokenUtility.TokenType;
 
 /**
  * µ¥´Ê

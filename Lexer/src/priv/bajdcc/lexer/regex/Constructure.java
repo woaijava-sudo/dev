@@ -1,4 +1,4 @@
-package cn.njnu.edu.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.regex;
 
 import java.util.ArrayList;
 
@@ -11,12 +11,16 @@ public class Constructure implements IRegexComponent {
 	/**
 	 * 若是则为分支，否则为顺序
 	 */
-	public boolean bBranch = true;
+	public boolean bBranch = false;
 
 	/**
 	 * 孩子结点
 	 */
 	public ArrayList<IRegexComponent> Components = new ArrayList<IRegexComponent>();
+
+	public Constructure(boolean branch) {
+		bBranch = branch;
+	}
 
 	@Override
 	public void Visit(IRegexComponentVisitor visitor) {
