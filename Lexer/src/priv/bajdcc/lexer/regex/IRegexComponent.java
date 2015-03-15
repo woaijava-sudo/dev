@@ -12,5 +12,5 @@ public interface IRegexComponent {
 	 * @param visitor
 	 *            µ›πÈ±È¿˙À„∑®
 	 */
-	public void Visit(IRegexComponentVisitor visitor);
+	public void visit(IRegexComponentVisitor visitor);
 }

@@ -7,8 +7,8 @@ import priv.bajdcc.lexer.token.TokenUtility.TokenType;
  * @author bajdcc
  */
 public class Token {
-	public TokenType kToken = TokenType.ERROR;
-	public Object object = null;
-	public int iLine = -1;
-	public int iIndex = -1; 
+	public TokenType m_kToken = TokenType.ERROR;
+	public Object m_Object = null;
+	public int m_iLine = -1;
+	public int m_iIndex = -1; 
 }

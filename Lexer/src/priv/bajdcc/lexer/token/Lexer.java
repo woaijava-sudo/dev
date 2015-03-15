@@ -15,25 +15,25 @@ public class Lexer implements ITokenVisitor {
 	/**
 	 * 单词数组
 	 */
-	private ArrayList<Token> arrTokens = new ArrayList<Token>();
+	private ArrayList<Token> m_arrTokens = new ArrayList<Token>();
 
 	/**
 	 * 当前单词
 	 */
-	private Token curToken;
+	private Token m_Token;
 
 	/**
 	 * 源字符串
 	 */
-	private String strContext;
+	private String m_strContext;
 
 	/**
 	 * 算法集合（DFA方式）
 	 */
-	private TokenAlgorithmCollection algCollections;
+	private TokenAlgorithmCollection m_algCollections;
 
 	public Lexer(String strInput) {
-		strContext = strInput;
+		m_strContext = strInput;
 		analysis();
 	}
 
@@ -41,7 +41,7 @@ public class Lexer implements ITokenVisitor {
 	 * @return 单词数组
 	 */
 	public List<Token> getTokens() {
-		return arrTokens;
+		return m_arrTokens;
 	}
 
 	/**

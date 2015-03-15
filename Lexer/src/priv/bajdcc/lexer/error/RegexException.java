@@ -23,9 +23,7 @@ public class RegexException extends Exception {
 		BRACK("中括号不匹配"),
 		PAREN("小括号不匹配"),
 		BRACE("大括号不匹配"),
-		BADBRACE("数字范围不正确"),
-		RANGE("字符范围不正确"),
-		BADREPEAT("谓词使用错误"),
+		RANGE("范围不正确"),
 		SYNTAX("语法错误"),
 		INCOMPLETE("正则表达式不完整");
 
@@ -46,31 +44,31 @@ public class RegexException extends Exception {
 
 	public RegexException(RegexError error, int location) {
 		super(error.getMessage());
-		iLocation = location;
-		kError = error;
+		m_iLocation = location;
+		m_kError = error;
 	}
 
 	/**
 	 * 位置
 	 */
-	private int iLocation = -1;
+	private int m_iLocation = -1;
 
 	/**
 	 * @return 错误位置
 	 */
 	public int getLocation() {
-		return iLocation;
+		return m_iLocation;
 	}
 
 	/**
 	 * 错误类型
 	 */
-	private RegexError kError = RegexError.NULL;
+	private RegexError m_kError = RegexError.NULL;
 
 	/**
 	 * @return 错误类型
 	 */
 	public RegexError getErrorCode() {
-		return kError;
+		return m_kError;
 	}
 }

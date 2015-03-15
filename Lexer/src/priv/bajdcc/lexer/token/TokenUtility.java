@@ -120,7 +120,7 @@ public class TokenUtility {
 	 */
 	public enum MetaType {
 		CHARACTER('\0'), LPARAN('('), RPARAN(')'), CARET('^'), DOLLAR('$'), STAR(
-				'*'), PLUS('+'), QUERY('?'), LSQARE('['), RSQARE(']'), BAR('|'), ESCAPE(
+				'*'), PLUS('+'), QUERY('?'), LSQUARE('['), RSQUARE(']'), BAR('|'), ESCAPE(
 				'\\'), DASH('-'), LBRACE('{'), RBRACE('}'), COMMA(','), NEW_LINE(
 				'\n'), CARRIAGE_RETURN('\r'), BACKSPACE('\b'), END('\0');
 

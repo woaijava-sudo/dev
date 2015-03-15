@@ -8,18 +8,18 @@ import java.util.ArrayList;
  * @author bajdcc
  */
 public class TokenAlgorithmCollection {
-	private ArrayList<ITokenAlgorithm> arrAlgorithms = new ArrayList<ITokenAlgorithm>();
+	private ArrayList<ITokenAlgorithm> m_arrAlgorithms = new ArrayList<ITokenAlgorithm>();
 
 	public void attach(ITokenAlgorithm alg) {
-		arrAlgorithms.add(alg);
+		m_arrAlgorithms.add(alg);
 	}
 
 	public void detach(ITokenAlgorithm alg) {
-		arrAlgorithms.remove(alg);
+		m_arrAlgorithms.remove(alg);
 	}
 
 	public boolean scan(ITokenVisitor visitor) {
-		for (ITokenAlgorithm alg : arrAlgorithms) {
+		for (ITokenAlgorithm alg : m_arrAlgorithms) {
 			if (alg.accept(visitor))
 				return true;
 		}

@@ -11,22 +11,22 @@ public class Constructure implements IRegexComponent {
 	/**
 	 * 若是则为分支，否则为顺序
 	 */
-	public boolean bBranch = false;
+	public boolean m_bBranch = false;
 
 	/**
 	 * 孩子结点
 	 */
-	public ArrayList<IRegexComponent> Components = new ArrayList<IRegexComponent>();
+	public ArrayList<IRegexComponent> m_arrComponents = new ArrayList<IRegexComponent>();
 
 	public Constructure(boolean branch) {
-		bBranch = branch;
+		m_bBranch = branch;
 	}
 
 	@Override
-	public void Visit(IRegexComponentVisitor visitor) {
+	public void visit(IRegexComponentVisitor visitor) {
 		visitor.visitBegin(this);
-		for (IRegexComponent component : Components) {
-			component.Visit(visitor);
+		for (IRegexComponent component : m_arrComponents) {
+			component.visit(visitor);
 		}
 		visitor.visitEnd(this);
 	}
