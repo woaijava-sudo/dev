@@ -1,7 +1,5 @@
 package priv.bajdcc.lexer.token;
 
-import java.util.HashMap;
-
 /**
  * µ¥´ÊÌØĞÔ
  * 

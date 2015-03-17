@@ -1,5 +1,7 @@
 package priv.bajdcc.lexer.regex;
 
+import java.util.Comparator;
+
 /**
  * ×Ö·û·¶Î§
  * 
@@ -32,16 +34,38 @@ public class CharacterRange {
 		if (m_chLowerBound == m_chUpperBound) {
 			sb.append(printChar(m_chLowerBound));
 		} else {
-			sb.append(printChar(m_chLowerBound) + "-" + printChar(m_chUpperBound));
+			sb.append(printChar(m_chLowerBound) + "-"
+					+ printChar(m_chUpperBound));
 		}
 		return sb.toString();
 	}
-	
-	private static String printChar(char ch){
-		if (Character.isISOControl(ch)){
-			return String.format("[\\u%04x]", (int)ch);
+
+	private static String printChar(char ch) {
+		if (Character.isISOControl(ch)) {
+			return String.format("[\\u%04x]", (int) ch);
 		} else {
-			return String.format("[\\u%04x,'%c']", (int)ch, ch);
+			return String.format("[\\u%04x,'%c']", (int) ch, ch);
 		}
+	}
+
+}
+
+class CharacterRangeComparator implements Comparator<CharacterRange> {
+
+	@Override
+	public int compare(CharacterRange o1, CharacterRange o2) {
+		if (o1.m_chLowerBound < o2.m_chLowerBound) {
+			return -1;
+		}
+		if (o1.m_chLowerBound == o2.m_chLowerBound) {
+			if (o1.m_chUpperBound < o2.m_chUpperBound) {
+				return -1;
+			}
+			if (o1.m_chUpperBound == o2.m_chUpperBound) {
+				return 0;
+			}
+			return 1;
+		}
+		return 1;
 	}
 }

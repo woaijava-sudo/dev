@@ -1,4 +1,4 @@
-package priv.bajdcc.lexer.main;
+package priv.bajdcc.lexer.test;
 
 import java.util.Scanner;
 
@@ -11,8 +11,10 @@ public class TestRegex {
 		try {
 			Scanner scanner = new Scanner(System.in);
 			String str = scanner.nextLine();
+			scanner.close();
 			RegexAnalysis ra = new RegexAnalysis(str);
 			System.out.println(ra);
+			System.out.println(ra.getStatusString());
 		} catch (RegexException e) {
 			System.err.println(e.getLocation() + "," + e.getMessage());
 			e.printStackTrace();

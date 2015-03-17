@@ -1,9 +1,9 @@
 package priv.bajdcc.lexer.regex;
 
 import java.util.HashMap;
-import java.util.Stack;
 
 import priv.bajdcc.lexer.regex.Charset.CharacterType;
+import priv.bajdcc.lexer.stringify.RegexToString;
 import priv.bajdcc.lexer.token.TokenUtility;
 import priv.bajdcc.lexer.token.TokenUtility.MetaType;
 import priv.bajdcc.lexer.error.RegexException;
@@ -32,6 +32,11 @@ public class RegexAnalysis {
 	 */
 	private IRegexComponent m_Expression = null;
 
+	/**
+	 * 状态集合Sigma
+	 */
+	private CharacterMap m_Status = new CharacterMap();
+
 	private static HashMap<Character, TokenUtility.MetaType> g_mapMeta = new HashMap<Character, TokenUtility.MetaType>();
 
 	static {
@@ -45,6 +50,7 @@ public class RegexAnalysis {
 	public RegexAnalysis(String pattern) throws RegexException {
 		m_strPattern = pattern;
 		compile();
+		m_Expression.visit(m_Status);// 重构字符区间
 	}
 
 	/**
@@ -124,7 +130,7 @@ public class RegexAnalysis {
 				case END: // '\0'
 					return result;
 				default:
-					if (!charset.addChar(m_Data.m_chCurrent)){
+					if (!charset.addChar(m_Data.m_chCurrent)) {
 						err(RegexError.RANGE);
 					}
 					next();
@@ -182,6 +188,38 @@ public class RegexAnalysis {
 		char ch = m_Data.m_chCurrent;
 		if (m_Data.m_kMeta == MetaType.CHARACTER) {// 字符
 			next();
+			if (extend) {
+				if (TokenUtility.isUpperLetter(ch) || ch == '.') {
+					charset.m_bReverse = true;// 大写则取反
+				}
+				char cl = Character.toLowerCase(ch);
+				switch (cl) {
+				case 'd':// 数字
+					charset.addRange('0', '9');
+					return;
+				case 'a':// 字母
+					charset.addRange('a', 'z');
+					charset.addRange('A', 'Z');
+					return;
+				case 'w':// 标识符
+					charset.addRange('a', 'z');
+					charset.addRange('A', 'Z');
+					charset.addRange('0', '9');
+					charset.addChar('_');
+					return;
+				case 's':// 空白字符
+					charset.addChar('\r');
+					charset.addChar('\n');
+					charset.addChar('\t');
+					charset.addChar('\b');
+					charset.addChar('\f');
+					charset.addChar(' ');
+					return;
+				default:
+					err(RegexError.ESCAPE);
+					break;
+				}
+			}
 			if (TokenUtility.isLetter(ch)) {// 如果为字母
 				if (ch == 'r') {
 					ch = '\r';
@@ -211,48 +249,18 @@ public class RegexAnalysis {
 						err(RegexError.ESCAPE);
 					}
 					ch = (char) d;
-				} else if (TokenUtility.isUpperLetter(ch) || ch == '.') {
-					charset.m_bReverse = true;// 大写则取反
+				} else {
+					err(RegexError.ESCAPE);
 				}
-				if (!charset.addChar(ch)){
+				if (!charset.addChar(ch)) {
 					err(RegexError.RANGE);
-				}
-			} else {
-				if (extend) {
-					char cl = Character.toLowerCase(ch);
-					switch (cl) {
-					case 'd':// 数字
-						charset.addRange('0', '9');
-						break;
-					case 'a':// 字母
-						charset.addRange('a', 'z');
-						charset.addRange('A', 'Z');
-						break;
-					case 'w':// 标识符
-						charset.addRange('a', 'z');
-						charset.addRange('A', 'Z');
-						charset.addRange('0', '9');
-						charset.addChar('_');
-						break;
-					case 's':// 空白字符
-						charset.addChar('\r');
-						charset.addChar('\n');
-						charset.addChar('\t');
-						charset.addChar('\b');
-						charset.addChar('\f');
-						charset.addChar(' ');
-						break;
-					default:
-						err(RegexError.ESCAPE);
-						break;
-					}
 				}
 			}
 		} else if (m_Data.m_kMeta == MetaType.END) {
 			err(RegexError.INCOMPLETE);
 		} else {// 功能字符则转义
 			next();
-			if (!charset.addChar(ch)){
+			if (!charset.addChar(ch)) {
 				err(RegexError.RANGE);
 			}
 		}
@@ -287,7 +295,7 @@ public class RegexAnalysis {
 						err(RegexError.RANGE);
 					}
 				} else {
-					if (!charset.addChar(lower)){
+					if (!charset.addChar(lower)) {
 						err(RegexError.RANGE);
 					}
 				}
@@ -338,7 +346,7 @@ public class RegexAnalysis {
 				err(RegexError.BRACE);
 			}
 		}
-		if (upper < lower) {
+		if (upper != -1 && upper < lower) {
 			err(RegexError.RANGE);
 		}
 		expect(MetaType.RBRACE, RegexError.BRACE);
@@ -445,14 +453,6 @@ public class RegexAnalysis {
 	}
 
 	/**
-	 * 后退一个字符（look back）
-	 * 
-	 */
-	private void rollback() {
-		m_Data.m_iIndex--;
-	}
-
-	/**
 	 * 获得当前字符
 	 * 
 	 * @return 当前字符
@@ -471,7 +471,7 @@ public class RegexAnalysis {
 	 * @throws RegexException
 	 */
 	private void expect(MetaType meta, RegexError error) throws RegexException {
-		if (m_Data.m_kMeta != meta) {
+		if (m_Data.m_kMeta == meta) {
 			next();
 		} else {
 			err(error);
@@ -483,6 +483,10 @@ public class RegexAnalysis {
 		RegexToString alg = new RegexToString();// 表达式树序列化算法初始化
 		m_Expression.visit(alg);// 遍历树
 		return alg.toString();
+	}
+
+	public String getStatusString() {
+		return m_Status.toString();
 	}
 }
 

@@ -1,4 +1,9 @@
-package priv.bajdcc.lexer.regex;
+package priv.bajdcc.lexer.stringify;
+
+import priv.bajdcc.lexer.regex.Charset;
+import priv.bajdcc.lexer.regex.Constructure;
+import priv.bajdcc.lexer.regex.IRegexComponentVisitor;
+import priv.bajdcc.lexer.regex.Repetition;
 
 public class RegexToString implements IRegexComponentVisitor {
 
@@ -40,7 +45,7 @@ public class RegexToString implements IRegexComponentVisitor {
 			break;
 		case NORMAL:
 			m_Context.append("字符");
-			m_Context.append(node.m_bReverse ? "[取反]" : "" + node);
+			m_Context.append((node.m_bReverse ? "[取反]" : "") + "\t" + node);
 			break;
 		default:
 			break;
@@ -56,8 +61,9 @@ public class RegexToString implements IRegexComponentVisitor {
 
 	@Override
 	public void visitBegin(Repetition node) {
-		m_Context.append(m_Prefix.toString() + "循环[" + (node.m_bGreedy ? "" : "非") + "贪婪]{"
-				+ node.m_iLowerBound + "," + node.m_iUpperBound + "}");
+		m_Context.append(m_Prefix.toString() + "循环["
+				+ (node.m_bGreedy ? "" : "非") + "贪婪]{" + node.m_iLowerBound
+				+ "," + node.m_iUpperBound + "}");
 		appendPrefix();
 	}
 
