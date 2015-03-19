@@ -2,30 +2,21 @@ package priv.bajdcc.lexer.regex;
 
 import java.util.HashMap;
 
-import priv.bajdcc.lexer.regex.Charset.CharacterType;
 import priv.bajdcc.lexer.stringify.RegexToString;
 import priv.bajdcc.lexer.token.TokenUtility;
-import priv.bajdcc.lexer.token.TokenUtility.MetaType;
+import priv.bajdcc.lexer.token.MetaType;
+import priv.bajdcc.lexer.automata.ENFAVisitor;
 import priv.bajdcc.lexer.error.RegexException;
 import priv.bajdcc.lexer.error.RegexException.RegexError;
 
 /**
  * ## 正则表达式分析工具 ##<br/>
  * 用于生成语法树<br/>
- * 语法同一般的正则表达式，有贪婪模式，没有前/后向匹配， 没有捕获功能，仅用于匹配。
+ * 语法同一般的正则表达式，只有贪婪模式，没有前/后向匹配， 没有捕获功能，仅用于匹配。
  * 
  * @author bajdcc
  */
-public class RegexAnalysis {
-	/**
-	 * 存储正则表达式
-	 */
-	private String m_strPattern;
-
-	/**
-	 * 当前的分析信息
-	 */
-	private RegexAnalysisData m_Data = new RegexAnalysisData();
+public class RegexAnalysis extends RegexStringIterator {
 
 	/**
 	 * 表达式树根结点
@@ -37,10 +28,20 @@ public class RegexAnalysis {
 	 */
 	private CharacterMap m_Status = new CharacterMap();
 
-	private static HashMap<Character, TokenUtility.MetaType> g_mapMeta = new HashMap<Character, TokenUtility.MetaType>();
+	/**
+	 * 字符解析组件
+	 */
+	private RegexStringUtility m_Utility = new RegexStringUtility(this);
+
+	/**
+	 * 遍历算法，AST->ENFA
+	 */
+	private ENFAVisitor m_ENFAVisitor = null;
+
+	private static HashMap<Character, MetaType> g_mapMeta = new HashMap<Character, MetaType>();
 
 	static {
-		for (TokenUtility.MetaType meta : TokenUtility.MetaType.values()) {
+		for (MetaType meta : MetaType.values()) {
 			if (meta.getChar() != 0) {
 				g_mapMeta.put(meta.getChar(), meta);
 			}
@@ -48,20 +49,24 @@ public class RegexAnalysis {
 	}
 
 	public RegexAnalysis(String pattern) throws RegexException {
-		m_strPattern = pattern;
+		super(pattern);
 		compile();
-		m_Expression.visit(m_Status);// 重构字符区间
 	}
 
 	/**
 	 * ## 编译表达式 ##<br/>
-	 * 表达式 => AST => ENFA => NFA => DFA => MFA
 	 * 
 	 * @throws RegexException
 	 */
 	private void compile() throws RegexException {
 		translate();
+		/* String->AST */
 		m_Expression = analysis(MetaType.END.getChar(), MetaType.END);
+		/* 重构字符区间 */
+		m_Expression.visit(m_Status);
+		/* AST->ENFA */
+		m_ENFAVisitor = new ENFAVisitor(m_Status);
+		m_Expression.visit(m_ENFAVisitor);
 	}
 
 	private IRegexComponent analysis(char terminal, MetaType meta)
@@ -113,12 +118,6 @@ public class RegexAnalysis {
 				Charset charset = new Charset();// 当前待分析的字符集
 				expression = charset;
 				switch (m_Data.m_kMeta) {
-				case CARET:// '^'
-					charset.m_kChar = CharacterType.BEGIN;
-					break;
-				case DOLLAR:// '$'
-					charset.m_kChar = CharacterType.END;
-					break;
 				case ESCAPE:// '\\'
 					next();
 					escape(charset, true);// 处理转义
@@ -142,33 +141,28 @@ public class RegexAnalysis {
 			switch (m_Data.m_kMeta) {
 			case QUERY:// '?'
 				next();
-				rep = new Repetition(expression, 0, 1, false);
+				rep = new Repetition(expression, 0, 1);
 				sequence.m_arrComponents.add(rep);
 				break;
 			case PLUS:// '+'
 				next();
-				rep = new Repetition(expression, 1, -1, false);
+				rep = new Repetition(expression, 1, -1);
 				sequence.m_arrComponents.add(rep);
 				break;
 			case STAR:// '*'
 				next();
-				rep = new Repetition(expression, 0, -1, false);
+				rep = new Repetition(expression, 0, -1);
 				sequence.m_arrComponents.add(rep);
 				break;
 			case LBRACE: // '{'
 				next();
-				rep = new Repetition(expression, 0, -1, false);
+				rep = new Repetition(expression, 0, -1);
 				quantity(rep);
 				sequence.m_arrComponents.add(rep);
 				break;
 			default:
 				sequence.m_arrComponents.add(expression);
 				break;
-			}
-
-			if (m_Data.m_kMeta == MetaType.QUERY) {// '?'
-				next();
-				rep.m_bGreedy = false;// 非贪婪模式
 			}
 		}
 
@@ -216,42 +210,11 @@ public class RegexAnalysis {
 					charset.addChar(' ');
 					return;
 				default:
-					err(RegexError.ESCAPE);
 					break;
 				}
 			}
 			if (TokenUtility.isLetter(ch)) {// 如果为字母
-				if (ch == 'r') {
-					ch = '\r';
-				} else if (ch == 'n') {
-					ch = '\n';
-				} else if (ch == 't') {
-					ch = '\t';
-				} else if (ch == 'b') {
-					ch = '\b';
-				} else if (ch == 'f') {
-					ch = '\f';
-				} else if (ch == 'x') {
-					int d = digit(16, 2);
-					if (d == -1) {
-						err(RegexError.ESCAPE);
-					}
-					ch = (char) d;
-				} else if (ch == 'o') {
-					int d = digit(8, 3);
-					if (d == -1) {
-						err(RegexError.ESCAPE);
-					}
-					ch = (char) d;
-				} else if (ch == 'u') {
-					int d = digit(16, 4);
-					if (d == -1) {
-						err(RegexError.ESCAPE);
-					}
-					ch = (char) d;
-				} else {
-					err(RegexError.ESCAPE);
-				}
+				ch = m_Utility.fromEscape(ch, RegexError.ESCAPE);
 				if (!charset.addChar(ch)) {
 					err(RegexError.RANGE);
 				}
@@ -335,13 +298,13 @@ public class RegexAnalysis {
 	 */
 	private void quantity(Repetition rep) throws RegexException {
 		int lower = 0, upper = -1;
-		lower = digit();
+		lower = digit();// 循环下界
 		if (lower == -1) {
 			err(RegexError.BRACE);
 		}
-		if (m_Data.m_kMeta == MetaType.COMMA) {
+		if (m_Data.m_kMeta == MetaType.COMMA) {// ','
 			next();
-			upper = digit();
+			upper = digit();// 得到循环上界
 			if (upper == -1) {
 				err(RegexError.BRACE);
 			}
@@ -352,31 +315,6 @@ public class RegexAnalysis {
 		expect(MetaType.RBRACE, RegexError.BRACE);
 		rep.m_iLowerBound = lower;
 		rep.m_iUpperBound = upper;
-	}
-
-	/**
-	 * 数字进制转换（分八进制OCT \o，两位十六进制HEX \x，四位十六进制UNICODE \\u）
-	 * 
-	 * @param base
-	 *            进制
-	 * @param count
-	 *            长度
-	 * @return 数字
-	 */
-	private int digit(int base, int count) {
-		int chv, val = 0;
-		try {
-			while (count != 0) {
-				chv = Integer.valueOf(m_Data.m_chCurrent + "", base);
-				--count;
-				val *= base;
-				val += chv;
-				next();
-			}
-		} catch (NumberFormatException e) {
-			val = -1;
-		}
-		return val;
 	}
 
 	/**
@@ -391,90 +329,18 @@ public class RegexAnalysis {
 		}
 		try {
 			return Integer.valueOf(
-					m_strPattern.substring(index, m_Data.m_iIndex), 10);
+					m_strContext.substring(index, m_Data.m_iIndex), 10);
 		} catch (NumberFormatException e) {
 			return -1;
 		}
 	}
 
-	/**
-	 * 抛出错误
-	 * 
-	 * @param error
-	 *            错误类型
-	 * @throws RegexException
-	 */
-	private void err(RegexError error) throws RegexException {
-		throw new RegexException(error, m_Data.m_iIndex);
-	}
-
-	/**
-	 * 处理下一个字符
-	 */
-	private void next() {
-		if (available()) {
-			advance();
-		}
-		translate();
-	}
-
-	/**
-	 * 翻译当前字符
-	 */
-	private void translate() {
-		if (!available()) {
-			m_Data.m_chCurrent = 0;
-			m_Data.m_kMeta = MetaType.END;
-			return;
-		}
-		m_Data.m_chCurrent = current();
+	@Override
+	protected void transform() {
 		if (g_mapMeta.containsKey(m_Data.m_chCurrent)) {
 			m_Data.m_kMeta = g_mapMeta.get(m_Data.m_chCurrent);// 功能字符
 		} else {
 			m_Data.m_kMeta = MetaType.CHARACTER;// 一般字符
-		}
-	}
-
-	/**
-	 * 判断当前位置不是末尾
-	 * 
-	 * @return 当前字符是否有效
-	 */
-	private boolean available() {
-		return m_Data.m_iIndex < m_strPattern.length();
-	}
-
-	/**
-	 * 前进一个字符（look forward）
-	 * 
-	 */
-	private void advance() {
-		m_Data.m_iIndex++;
-	}
-
-	/**
-	 * 获得当前字符
-	 * 
-	 * @return 当前字符
-	 */
-	private char current() {
-		return m_strPattern.charAt(m_Data.m_iIndex);
-	}
-
-	/**
-	 * 确认当前字符
-	 * 
-	 * @param meta
-	 *            类型
-	 * @param error
-	 *            抛出的错误
-	 * @throws RegexException
-	 */
-	private void expect(MetaType meta, RegexError error) throws RegexException {
-		if (m_Data.m_kMeta == meta) {
-			next();
-		} else {
-			err(error);
 		}
 	}
 
@@ -485,37 +351,17 @@ public class RegexAnalysis {
 		return alg.toString();
 	}
 
+	/**
+	 * 获取字符区间描述
+	 */
 	public String getStatusString() {
 		return m_Status.toString();
 	}
-}
-
-/**
- * 分析时使用的堆栈数据
- */
-class RegexAnalysisData {
-	/**
-	 * 当前处理的位置
-	 */
-	public int m_iIndex = 0;
 
 	/**
-	 * 字符
+	 * 获取ENFA描述
 	 */
-	public char m_chCurrent = 0;
-
-	/**
-	 * 字符类型
-	 */
-	public MetaType m_kMeta = MetaType.END;
-
-	public RegexAnalysisData() {
-
-	}
-
-	public RegexAnalysisData(int index, char current, MetaType meta) {
-		m_iIndex = index;
-		m_chCurrent = current;
-		m_kMeta = meta;
+	public String getENFAString() {
+		return m_ENFAVisitor.toString();
 	}
 }

@@ -20,22 +20,15 @@ public class Repetition implements IRegexComponent {
 	 * 循环次数上限
 	 */
 	public int m_iUpperBound = 0;
-	
-	/**
-	 * 是否贪婪模式
-	 */
-	public boolean m_bGreedy = false;
 
 	public Repetition() {
 
 	}
 
-	public Repetition(IRegexComponent component, int begin, int end,
-			boolean greedy) {
+	public Repetition(IRegexComponent component, int begin, int end) {
 		m_Component = component;
 		m_iLowerBound = begin;
 		m_iUpperBound = end;
-		m_bGreedy = greedy;
 	}
 
 	@Override

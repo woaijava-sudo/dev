@@ -1,7 +1,5 @@
 package priv.bajdcc.lexer.token;
 
-import priv.bajdcc.lexer.token.TokenUtility.TokenType;
-
 /**
  * µ¥´Ê
  * @author bajdcc

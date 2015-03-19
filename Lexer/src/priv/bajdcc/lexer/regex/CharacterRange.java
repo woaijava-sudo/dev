@@ -27,6 +27,15 @@ public class CharacterRange {
 		m_chLowerBound = lower;
 		m_chUpperBound = upper;
 	}
+	
+	/**
+	 * 当前区间是否包含字符
+	 * @param ch 字符
+	 * @return 比较结果
+	 */
+	public boolean include(char ch) {
+		return ch >= m_chLowerBound && ch <= m_chUpperBound;
+	}
 
 	@Override
 	public String toString() {

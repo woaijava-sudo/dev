@@ -2,7 +2,7 @@ package priv.bajdcc.lexer.regex;
 
 import java.util.ArrayList;
 
-import priv.bajdcc.lexer.token.TokenUtility.MetaType;
+import priv.bajdcc.lexer.token.MetaType;
 
 /**
  * 字符集
@@ -20,29 +20,6 @@ public class Charset implements IRegexComponent {
 	 * 是否取反
 	 */
 	public boolean m_bReverse = false;
-
-	/**
-	 * 功能
-	 */
-	public enum CharacterType {
-		/**
-		 * 正常模式：启用字符范围
-		 */
-		NORMAL,
-		/**
-		 * 匹配行首
-		 */
-		BEGIN,
-		/**
-		 * 匹配行末
-		 */
-		END
-	}
-
-	/**
-	 * 字符集类型（匹配字符，匹配首，匹配末）
-	 */
-	public CharacterType m_kChar = CharacterType.NORMAL;
 
 	@Override
 	public void visit(IRegexComponentVisitor visitor) {
@@ -78,6 +55,20 @@ public class Charset implements IRegexComponent {
 	 */
 	public boolean addChar(char ch) {
 		return addRange(ch, ch);
+	}
+	
+	/**
+	 * 当前字符集是否包含指定字符
+	 * @param ch 字符
+	 * @return 查找结果
+	 */
+	public boolean include(char ch) {
+		for (CharacterRange range : m_arrPositiveBounds) {
+			if (range.include(ch)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

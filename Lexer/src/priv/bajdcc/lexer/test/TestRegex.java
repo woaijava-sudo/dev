@@ -15,6 +15,7 @@ public class TestRegex {
 			RegexAnalysis ra = new RegexAnalysis(str);
 			System.out.println(ra);
 			System.out.println(ra.getStatusString());
+			System.out.println(ra.getENFAString());
 		} catch (RegexException e) {
 			System.err.println(e.getLocation() + "," + e.getMessage());
 			e.printStackTrace();

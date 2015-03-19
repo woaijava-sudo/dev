@@ -1,10 +1,6 @@
 package priv.bajdcc.lexer.regex;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-
-import priv.bajdcc.lexer.token.TokenUtility.OperatorType;
 
 /**
  * 字符集合，将字符范围按状态分组（Sigma集合）
@@ -53,7 +49,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 	public ArrayList<Integer> getStatus() {
 		return m_arrStatus;
 	}
-	
+
 	/**
 	 * 排序方法
 	 */
@@ -91,6 +87,23 @@ public class CharacterMap implements IRegexComponentVisitor {
 	@Override
 	public void visitEnd(Repetition node) {
 		decreaseLevel();
+	}
+
+	/**
+	 * 查找指定字符所在的区间范围序号
+	 * 
+	 * @param ch
+	 *            字符
+	 * @return 序号，-1代表不存在
+	 */
+	public int find(char ch) {
+		for (int i = 0; i < m_arrRanges.size(); i++) {
+			CharacterRange range = m_arrRanges.get(i);
+			if (range.include(ch)) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -134,7 +147,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 	 * 深度减一
 	 */
 	private void decreaseLevel() {
-		m_iLevel++;
+		m_iLevel--;
 		if (m_iLevel == 0) {// 遍历到根结点
 			putStatus();
 		}
@@ -144,8 +157,8 @@ public class CharacterMap implements IRegexComponentVisitor {
 	 * 添加所有状态
 	 */
 	private void putStatus() {
-		for (int i = 0; i < m_arrStatus.size(); i++) {
-			m_arrStatus.set(i, -1);// 所有元素置为无效状态-1
+		for (int i = 0; i < g_iUnicodeMapSize; i++) {
+			m_arrStatus.add(-1);// 所有元素置为无效状态-1
 		}
 		for (int i = 0; i < m_arrRanges.size(); i++) {
 			for (char j = m_arrRanges.get(i).m_chLowerBound; j <= m_arrRanges
@@ -163,7 +176,6 @@ public class CharacterMap implements IRegexComponentVisitor {
 	 */
 	private void addRange(CharacterRange newRange) {
 
-		
 		for (int i = 0; i < m_arrRanges.size(); i++) {
 			m_arrRanges.sort(m_Comparator);
 			CharacterRange oldRange = m_arrRanges.get(i);
@@ -193,6 +205,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 					m_arrRanges.add(new CharacterRange(
 							(char) (oldRange.m_chUpperBound + 1),
 							(char) (newRange.m_chLowerBound - 1)));
+					i++;
 				} else if (oldRange.m_chUpperBound == newRange.m_chUpperBound) {
 
 					// [###########Old############]
@@ -205,7 +218,6 @@ public class CharacterMap implements IRegexComponentVisitor {
 					oldRange.m_chUpperBound = (char) (newRange.m_chLowerBound - 1);
 					m_arrRanges.add(newRange);
 					m_arrRanges.add(oldRange);
-					i++;
 					return;
 				} else {
 
@@ -223,6 +235,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 					m_arrRanges.add(new CharacterRange(
 							(char) (newRange.m_chLowerBound + 1),
 							oldRange.m_chUpperBound));
+					return;
 				}
 			} else if (oldRange.m_chLowerBound == newRange.m_chLowerBound) {
 				if (oldRange.m_chUpperBound < newRange.m_chUpperBound) {
@@ -251,6 +264,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 					oldRange.m_chLowerBound = (char) (newRange.m_chUpperBound + 1);
 					m_arrRanges.add(newRange);
 					m_arrRanges.add(oldRange);
+					return;
 				}
 			} else if (oldRange.m_chLowerBound <= newRange.m_chUpperBound) {
 				if (oldRange.m_chUpperBound < newRange.m_chUpperBound) {
@@ -260,10 +274,11 @@ public class CharacterMap implements IRegexComponentVisitor {
 					// [Old]与[New]有交集[Old]
 					// [Left]=[New.Lower,Old.Lower-1]
 					// [New]=[Old.Upper+1,New.Upper]
-					
+
 					m_arrRanges.add(new CharacterRange(newRange.m_chLowerBound,
 							(char) (oldRange.m_chLowerBound - 1)));
 					newRange.m_chLowerBound = (char) (oldRange.m_chUpperBound + 1);
+					i++;
 				} else if (oldRange.m_chUpperBound == newRange.m_chUpperBound) {
 
 					// ______[#######Old#######]
@@ -306,7 +321,7 @@ public class CharacterMap implements IRegexComponentVisitor {
 	 */
 	private void addRanges(Charset charset) {
 		for (CharacterRange range : charset.m_arrPositiveBounds) {
-			addRange(range);
+			addRange(new CharacterRange(range.m_chLowerBound, range.m_chUpperBound));
 		}
 	}
 
