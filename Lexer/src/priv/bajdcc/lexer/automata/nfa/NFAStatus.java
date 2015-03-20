@@ -1,6 +1,8 @@
-package priv.bajdcc.lexer.automata;
+package priv.bajdcc.lexer.automata.nfa;
 
 import java.util.ArrayList;
+
+import priv.bajdcc.lexer.automata.BreadthFirstSearch;
 
 /**
  * NFA状态
@@ -25,7 +27,7 @@ public class NFAStatus {
 	public NFAStatusData m_Data = new NFAStatusData();
 
 	/**
-	 * 遍历自身，添加自身状态及其子状态
+	 * 用于遍历包括该状态在内的所有状态（连通），结果存放在PATH中
 	 * 
 	 * @param bfs
 	 *            遍历算法
@@ -38,7 +40,7 @@ public class NFAStatus {
 			NFAStatus status = stack.get(i);
 			bfs.visitBegin(status);
 			for (NFAEdge edge : status.m_OutEdges) {// 遍历状态的出边
-				if (!stack.contains(edge.m_End) && bfs.testEdge(edge)) {
+				if (!stack.contains(edge.m_End) && bfs.testEdge(edge)) {// 边未被访问，且边类型符合要求
 					stack.add(edge.m_End);
 				}
 			}

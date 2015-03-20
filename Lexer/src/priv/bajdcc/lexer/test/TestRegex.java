@@ -3,7 +3,7 @@ package priv.bajdcc.lexer.test;
 import java.util.Scanner;
 
 import priv.bajdcc.lexer.error.RegexException;
-import priv.bajdcc.lexer.regex.RegexAnalysis;
+import priv.bajdcc.lexer.regex.Regex;
 
 public class TestRegex {
 
@@ -12,10 +12,7 @@ public class TestRegex {
 			Scanner scanner = new Scanner(System.in);
 			String str = scanner.nextLine();
 			scanner.close();
-			RegexAnalysis ra = new RegexAnalysis(str);
-			System.out.println(ra);
-			System.out.println(ra.getStatusString());
-			System.out.println(ra.getENFAString());
+			Regex ra = new Regex(str, true);
 		} catch (RegexException e) {
 			System.err.println(e.getLocation() + "," + e.getMessage());
 			e.printStackTrace();

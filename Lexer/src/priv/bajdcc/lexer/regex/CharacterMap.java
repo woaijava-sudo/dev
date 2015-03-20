@@ -38,15 +38,14 @@ public class CharacterMap implements IRegexComponentVisitor {
 	/**
 	 * 面向字符（Unicode）的状态映射表，大小65536
 	 */
-	private ArrayList<Integer> m_arrStatus = new ArrayList<Integer>(
-			g_iUnicodeMapSize);
+	private int[] m_arrStatus = new int[g_iUnicodeMapSize];
 
 	/**
 	 * 返回Unicode字符映射表
 	 * 
 	 * @return 字符映射表
 	 */
-	public ArrayList<Integer> getStatus() {
+	public int[] getStatus() {
 		return m_arrStatus;
 	}
 
@@ -158,12 +157,13 @@ public class CharacterMap implements IRegexComponentVisitor {
 	 */
 	private void putStatus() {
 		for (int i = 0; i < g_iUnicodeMapSize; i++) {
-			m_arrStatus.add(-1);// 所有元素置为无效状态-1
+			m_arrStatus[i] = -1;// 所有元素置为无效状态-1
 		}
 		for (int i = 0; i < m_arrRanges.size(); i++) {
-			for (char j = m_arrRanges.get(i).m_chLowerBound; j <= m_arrRanges
-					.get(i).m_chUpperBound; j++) {
-				m_arrStatus.set(j, i);// 将范围i中包括的所有元素置为i
+			int lower = m_arrRanges.get(i).m_chLowerBound;
+			int upper = m_arrRanges.get(i).m_chUpperBound;
+			for (int j = lower; j <= upper; j++) {
+				m_arrStatus[j] = i;// 将范围i中包括的所有元素置为i
 			}
 		}
 	}

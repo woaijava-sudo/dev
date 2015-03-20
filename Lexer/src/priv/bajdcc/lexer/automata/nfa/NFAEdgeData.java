@@ -1,4 +1,6 @@
-package priv.bajdcc.lexer.automata;
+package priv.bajdcc.lexer.automata.nfa;
+
+import priv.bajdcc.lexer.automata.EdgeType;
 
 /**
  * NFA±ßÊý¾Ý

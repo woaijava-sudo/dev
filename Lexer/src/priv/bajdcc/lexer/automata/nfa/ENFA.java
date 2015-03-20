@@ -1,8 +1,4 @@
-package priv.bajdcc.lexer.automata;
-
-import java.util.ArrayList;
-
-import priv.bajdcc.lexer.regex.CharacterMap;
+package priv.bajdcc.lexer.automata.nfa;
 
 /**
  * EpsilonNFA
@@ -12,12 +8,12 @@ import priv.bajdcc.lexer.regex.CharacterMap;
  */
 public class ENFA {
 	/**
-	 * Ê¼×´Ì¬
+	 * ³õÌ¬
 	 */
 	public NFAStatus m_Begin;
 
 	/**
-	 * ÖÕ×´Ì¬
+	 * ÖÕÌ¬
 	 */
 	public NFAStatus m_End;
 }

@@ -1,4 +1,4 @@
-package priv.bajdcc.lexer.automata;
+package priv.bajdcc.lexer.automata.nfa;
 
 /**
  * NFA×´Ì¬Êý¾Ý

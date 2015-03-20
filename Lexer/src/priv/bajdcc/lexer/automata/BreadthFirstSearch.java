@@ -19,7 +19,7 @@ public class BreadthFirstSearch<Edge, Status> implements
 
 	@Override
 	public boolean testEdge(Edge edge) {
-		return false;
+		return true;
 	}
 
 	@Override

@@ -6,7 +6,7 @@ package priv.bajdcc.lexer.token;
 public enum MetaType {
 	CHARACTER('\0'), LPARAN('('), RPARAN(')'), CARET('^'), DOLLAR('$'), STAR(
 			'*'), PLUS('+'), QUERY('?'), LSQUARE('['), RSQUARE(']'), BAR('|'), ESCAPE(
-			'\\'), DASH('-'), LBRACE('{'), RBRACE('}'), COMMA(','), NEW_LINE(
+			'\\'), DASH('-'), LBRACE('{'), RBRACE('}'), COMMA(','), DOT('.'), NEW_LINE(
 			'\n'), CARRIAGE_RETURN('\r'), BACKSPACE('\b'), END('\0');
 
 	private char ch;

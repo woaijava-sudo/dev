@@ -5,7 +5,7 @@ import java.util.HashMap;
 import priv.bajdcc.lexer.stringify.RegexToString;
 import priv.bajdcc.lexer.token.TokenUtility;
 import priv.bajdcc.lexer.token.MetaType;
-import priv.bajdcc.lexer.automata.ENFAVisitor;
+import priv.bajdcc.lexer.automata.dfa.DFA;
 import priv.bajdcc.lexer.error.RegexException;
 import priv.bajdcc.lexer.error.RegexException.RegexError;
 
@@ -16,17 +16,17 @@ import priv.bajdcc.lexer.error.RegexException.RegexError;
  * 
  * @author bajdcc
  */
-public class RegexAnalysis extends RegexStringIterator {
+public class Regex extends RegexStringIterator {
 
+	/**
+	 * 是否为调试模式（打印信息）
+	 */
+	private boolean m_bDebug = false;
+	
 	/**
 	 * 表达式树根结点
 	 */
 	private IRegexComponent m_Expression = null;
-
-	/**
-	 * 状态集合Sigma
-	 */
-	private CharacterMap m_Status = new CharacterMap();
 
 	/**
 	 * 字符解析组件
@@ -34,9 +34,9 @@ public class RegexAnalysis extends RegexStringIterator {
 	private RegexStringUtility m_Utility = new RegexStringUtility(this);
 
 	/**
-	 * 遍历算法，AST->ENFA
+	 * DFA
 	 */
-	private ENFAVisitor m_ENFAVisitor = null;
+	private DFA m_DFA = null;
 
 	private static HashMap<Character, MetaType> g_mapMeta = new HashMap<Character, MetaType>();
 
@@ -48,8 +48,13 @@ public class RegexAnalysis extends RegexStringIterator {
 		}
 	}
 
-	public RegexAnalysis(String pattern) throws RegexException {
+	public Regex(String pattern) throws RegexException {
+		this(pattern, false);
+	}
+	
+	public Regex(String pattern, boolean debug) throws RegexException {		
 		super(pattern);
+		m_bDebug = debug;
 		compile();
 	}
 
@@ -62,11 +67,12 @@ public class RegexAnalysis extends RegexStringIterator {
 		translate();
 		/* String->AST */
 		m_Expression = analysis(MetaType.END.getChar(), MetaType.END);
-		/* 重构字符区间 */
-		m_Expression.visit(m_Status);
-		/* AST->ENFA */
-		m_ENFAVisitor = new ENFAVisitor(m_Status);
-		m_Expression.visit(m_ENFAVisitor);
+		if (m_bDebug) {
+			System.out.println("#### 正则表达式语法树 ####");
+			System.out.println(toString());
+		}
+		/* AST->NFA->DFA */
+		m_DFA = new DFA(m_Expression, m_bDebug);
 	}
 
 	private IRegexComponent analysis(char terminal, MetaType meta)
@@ -121,6 +127,10 @@ public class RegexAnalysis extends RegexStringIterator {
 				case ESCAPE:// '\\'
 					next();
 					escape(charset, true);// 处理转义
+					break;
+				case DOT://'.'
+					m_Data.m_kMeta = MetaType.CHARACTER;
+					escape(charset, true);
 					break;
 				case LSQUARE: // '['
 					next();
@@ -297,16 +307,20 @@ public class RegexAnalysis extends RegexStringIterator {
 	 * @throws RegexException
 	 */
 	private void quantity(Repetition rep) throws RegexException {
-		int lower = 0, upper = -1;
-		lower = digit();// 循环下界
+		int lower, upper;
+		lower = upper = digit();// 循环下界
 		if (lower == -1) {
 			err(RegexError.BRACE);
 		}
 		if (m_Data.m_kMeta == MetaType.COMMA) {// ','
 			next();
-			upper = digit();// 得到循环上界
-			if (upper == -1) {
-				err(RegexError.BRACE);
+			if (m_Data.m_kMeta == MetaType.RBRACE) {// '}'
+				upper = -1;// 上界为无穷大
+			} else {
+				upper = digit();// 得到循环上界
+				if (upper == -1) {
+					err(RegexError.BRACE);
+				}
 			}
 		}
 		if (upper != -1 && upper < lower) {
@@ -355,13 +369,13 @@ public class RegexAnalysis extends RegexStringIterator {
 	 * 获取字符区间描述
 	 */
 	public String getStatusString() {
-		return m_Status.toString();
+		return m_DFA.getStatusString();
 	}
 
 	/**
-	 * 获取ENFA描述
+	 * 获取NFA描述
 	 */
-	public String getENFAString() {
-		return m_ENFAVisitor.toString();
+	public String getNFAString() {
+		return m_DFA.getNFAString();
 	}
 }
