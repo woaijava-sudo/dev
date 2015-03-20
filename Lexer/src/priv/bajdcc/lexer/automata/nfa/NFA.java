@@ -366,6 +366,13 @@ public class NFA implements IRegexComponentVisitor {
 		result.m_End = dstStatusList.get(srcStatusList.indexOf(enfa.m_End));
 		return result;
 	}
+	
+	/**
+	 * 获取字符映射表
+	 */
+	public CharacterMap getCharacterMap() {
+		return m_Map;
+	}
 
 	/**
 	 * 获取NFA状态闭包

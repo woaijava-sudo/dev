@@ -2,11 +2,13 @@ package priv.bajdcc.lexer.token;
 
 /**
  * 单词类型
+ * 
+ * @author bajdcc
  */
 public enum TokenType {
-	KEYWORD("关键字"), ID("标识符"), BOOLEAN("布尔型"), CHARACHER("字符"), STRING(
-			"字符串"), INTEGER("整数"), REAL("实数"), EOL("行末尾"), EOF("文件末尾"), COMMENT(
-			"注释"), LABEL("标签"), ERROR("错误");
+	KEYWORD("关键字"), ID("标识符"), WHITESPACE("空白字符"), CHARACTER("字符"), STRING(
+			"字符串"), INTEGER("整数"), REAL("实数"), EOF("全文末尾"), COMMENT("注释"), OPERATOR(
+			"操作符"), ERROR("错误");
 
 	private String name;
 

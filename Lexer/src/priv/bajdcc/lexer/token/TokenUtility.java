@@ -5,7 +5,7 @@ package priv.bajdcc.lexer.token;
  * 
  * @author bajdcc
  */
-public class TokenUtility {	
+public class TokenUtility {
 
 	/**
 	 * ÊÇ·ñÎªASCIIÓ¢ÎÄ×ÖÄ¸

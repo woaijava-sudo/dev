@@ -104,6 +104,14 @@ public class DFA extends NFA {
 	}
 
 	/**
+	 * 获得DFA状态转换矩阵
+	 */
+	public ArrayList<DFAStatus> getDFATable() {
+		return getDFAStatusClosure(
+				new BreadthFirstSearch<DFAEdge, DFAStatus>(), m_mainDFA);
+	}
+
+	/**
 	 * 去除Epsilon边
 	 */
 	private void deleteEpsilonEdges() {
@@ -254,9 +262,7 @@ public class DFA extends NFA {
 						}
 					}
 					DFAStatusList.add(status);
-					DFAStatusListMap.put(
-							status.m_Data.getStatusString(NFAStatusList),
-							DFAStatusList.size() - 1);
+					DFAStatusListMap.put(hash, DFAStatusList.size() - 1);
 				}
 				/* 创建DFA边 */
 				DFAEdge edge = connect(dfaStatus, status);

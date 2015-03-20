@@ -1,11 +1,16 @@
 package priv.bajdcc.lexer.regex;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import priv.bajdcc.lexer.stringify.RegexToString;
 import priv.bajdcc.lexer.token.TokenUtility;
 import priv.bajdcc.lexer.token.MetaType;
+import priv.bajdcc.lexer.automata.EdgeType;
 import priv.bajdcc.lexer.automata.dfa.DFA;
+import priv.bajdcc.lexer.automata.dfa.DFAEdge;
+import priv.bajdcc.lexer.automata.dfa.DFAStatus;
 import priv.bajdcc.lexer.error.RegexException;
 import priv.bajdcc.lexer.error.RegexException.RegexError;
 
@@ -22,37 +27,60 @@ public class Regex extends RegexStringIterator {
 	 * 是否为调试模式（打印信息）
 	 */
 	private boolean m_bDebug = false;
-	
+
 	/**
 	 * 表达式树根结点
 	 */
 	private IRegexComponent m_Expression = null;
 
 	/**
-	 * 字符解析组件
-	 */
-	private RegexStringUtility m_Utility = new RegexStringUtility(this);
-
-	/**
 	 * DFA
 	 */
 	private DFA m_DFA = null;
 
+	/**
+	 * DFA状态转换表
+	 */
+	private int[][] m_Transition = null;
+
+	/**
+	 * 终态表
+	 */
+	private HashSet<Integer> m_FinalStatus = new HashSet<Integer>();
+
+	/**
+	 * 字符区间表
+	 */
+	private CharacterMap m_Map = null;
+
+	/**
+	 * 字符串过滤接口
+	 */
+	private IRegexStringFilter m_Filter = null;
+
+	public void setFilter(IRegexStringFilter filter) {
+		m_Filter = filter;
+	}
+
 	private static HashMap<Character, MetaType> g_mapMeta = new HashMap<Character, MetaType>();
 
 	static {
-		for (MetaType meta : MetaType.values()) {
-			if (meta.getChar() != 0) {
-				g_mapMeta.put(meta.getChar(), meta);
-			}
+		MetaType[] metaTypes = new MetaType[] { MetaType.LPARAN,
+				MetaType.RPARAN, MetaType.STAR, MetaType.PLUS, MetaType.QUERY,
+				MetaType.CARET, MetaType.LSQUARE, MetaType.RSQUARE,
+				MetaType.BAR, MetaType.ESCAPE, MetaType.DASH, MetaType.LBRACE,
+				MetaType.RBRACE, MetaType.COMMA, MetaType.DOT,
+				MetaType.NEW_LINE, MetaType.CARRIAGE_RETURN, MetaType.BACKSPACE };
+		for (MetaType meta : metaTypes) {
+			g_mapMeta.put(meta.getChar(), meta);
 		}
 	}
 
 	public Regex(String pattern) throws RegexException {
 		this(pattern, false);
 	}
-	
-	public Regex(String pattern, boolean debug) throws RegexException {		
+
+	public Regex(String pattern, boolean debug) throws RegexException {
 		super(pattern);
 		m_bDebug = debug;
 		compile();
@@ -71,8 +99,122 @@ public class Regex extends RegexStringIterator {
 			System.out.println("#### 正则表达式语法树 ####");
 			System.out.println(toString());
 		}
-		/* AST->NFA->DFA */
+		/* AST->ENFA->NFA->DFA */
 		m_DFA = new DFA(m_Expression, m_bDebug);
+		/* DFA Transfer Table */
+		buildTransition();
+		if (m_bDebug) {
+			System.out.println("#### 状态转移矩阵 ####");
+			System.out.println(getDFATableString());
+		}
+	}
+
+	/**
+	 * 建立DFA状态转换表
+	 */
+	private void buildTransition() {
+		/* 字符区间映射表 */
+		m_Map = m_DFA.getCharacterMap();
+		/* DFA状态表 */
+		ArrayList<DFAStatus> statusList = m_DFA.getDFATable();
+		/* 分配空间 */
+		m_Transition = new int[statusList.size()][m_Map.getRanges().size()];
+		/* 填充状态转移表 */
+		for (int i = 0; i < statusList.size(); i++) {
+			DFAStatus status = statusList.get(i);
+			if (status.m_Data.m_bFinal) {
+				m_FinalStatus.add(i);// 标记终态
+			}
+			for (int j = 0; j < m_Transition[i].length; j++) {
+				m_Transition[i][j] = -1;// 置无效标记-1
+			}
+			for (DFAEdge edge : status.m_OutEdges) {
+				if (edge.m_Data.m_Action == EdgeType.CHARSET) {
+					m_Transition[i][edge.m_Data.m_Param] = statusList
+							.indexOf(edge.m_End);
+				}
+			}
+		}
+	}
+
+	/**
+	 * 匹配算法（DFA状态表）
+	 * 
+	 * @param iterator
+	 *            字符串遍历接口
+	 * @param matchString
+	 *            输出的匹配字符串
+	 * @return 是否匹配成功
+	 */
+	public boolean match(IRegexStringIterator iterator,
+			IRegexStringAttribute attr) {
+		/* 使用全局字符映射表 */
+		int[] charMap = m_Map.getStatus();
+		/* 保存当前位置 */
+		iterator.snapshot();
+		/* 当前状态 */
+		int status = 0;
+		/* 上次经过的终态 */
+		int lastFinalStatus = -1;
+		/* 上次经过的终态位置 */
+		int lastIndex = -1;
+		/* 存放匹配字符串 */
+		StringBuilder sb = new StringBuilder();
+		for (;;) {
+			if (m_FinalStatus.contains(status)) {// 经过终态
+				if (attr.getGreedMode()) {// 贪婪模式
+					if (lastFinalStatus == -1) {
+						iterator.snapshot();// 保存位置
+					} else {
+						iterator.cover();// 覆盖位置
+					}
+					lastFinalStatus = status;// 记录上次状态
+					lastIndex = sb.length();
+				} else {// 非贪婪模式，则匹配完成
+					iterator.discard();// 匹配成功，丢弃位置
+					attr.setResult(sb.toString());
+					return true;
+				}
+			}
+			char local = 0;
+			boolean skipStore = false;// 取消存储当前字符
+			/* 获得当前字符 */
+			if (m_Filter != null) {
+				RegexStringIteratorData data = m_Filter.filter(iterator);// 过滤
+				local = data.m_chCurrent;
+				skipStore = data.m_kMeta == MetaType.NULL;
+			} else {
+				if (!iterator.available()) {
+					local = 0;
+				} else {
+					local = iterator.current();
+					iterator.next();
+				}
+			}
+			/* 存储字符 */
+			if (!skipStore) {
+				sb.append(local);
+			}
+			/* 获得字符区间索引 */
+			int charClass = charMap[local];
+			/* 状态转移 */
+			int refer = -1;
+			if (charClass != -1) {// 区间有效，尝试转移
+				refer = m_Transition[status][charClass];
+			}
+			if (refer == -1) {// 失败
+				iterator.restore();
+				if (lastFinalStatus == -1) {// 匹配失败
+					return false;
+				} else {// 使用上次经过的终态匹配结果
+					iterator.discard();// 匹配成功，丢弃位置
+					attr.setResult(sb.substring(0, lastIndex));
+					return true;
+				}
+			} else {
+				status = refer;// 更新状态
+			}
+		}
 	}
 
 	private IRegexComponent analysis(char terminal, MetaType meta)
@@ -128,7 +270,7 @@ public class Regex extends RegexStringIterator {
 					next();
 					escape(charset, true);// 处理转义
 					break;
-				case DOT://'.'
+				case DOT:// '.'
 					m_Data.m_kMeta = MetaType.CHARACTER;
 					escape(charset, true);
 					break;
@@ -276,7 +418,8 @@ public class Regex extends RegexStringIterator {
 				next();
 				escape(charset, false);
 			} else {
-				err(RegexError.RANGE);
+				next();
+				charset.addChar(m_Data.m_chCurrent);
 			}
 		}
 		next();
@@ -377,5 +520,19 @@ public class Regex extends RegexStringIterator {
 	 */
 	public String getNFAString() {
 		return m_DFA.getNFAString();
+	}
+
+	/**
+	 * 获取状态转移矩阵描述
+	 */
+	public String getDFATableString() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < m_Transition.length; i++) {
+			for (int j = 0; j < m_Transition[i].length; j++) {
+				sb.append("\t" + m_Transition[i][j]);
+			}
+			sb.append(System.getProperty("line.separator"));
+		}
+		return sb.toString();
 	}
 }

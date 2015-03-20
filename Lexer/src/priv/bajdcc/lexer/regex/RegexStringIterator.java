@@ -1,8 +1,11 @@
 package priv.bajdcc.lexer.regex;
 
+import java.util.Stack;
+
 import priv.bajdcc.lexer.error.RegexException;
 import priv.bajdcc.lexer.error.RegexException.RegexError;
 import priv.bajdcc.lexer.token.MetaType;
+import priv.bajdcc.lexer.utility.Position;
 
 /**
  * 字符串迭代器，提供字节流解析功能
@@ -10,11 +13,26 @@ import priv.bajdcc.lexer.token.MetaType;
  * @author bajdcc
  *
  */
-public class RegexStringIterator implements IRegexStringIterator {
+public abstract class RegexStringIterator implements IRegexStringIterator {
 	/**
 	 * 存储字符串
 	 */
 	protected String m_strContext;
+
+	/**
+	 * 用于恢复的位置堆栈
+	 */
+	public Stack<Integer> m_stkIndex = new Stack<Integer>();
+
+	/**
+	 * 位置
+	 */
+	protected Position m_Position = new Position();
+
+	/**
+	 * 用于恢复行列数的堆栈
+	 */
+	public Stack<Position> m_stkPosition = new Stack<Position>();
 
 	/**
 	 * 当前的分析信息
@@ -25,29 +43,36 @@ public class RegexStringIterator implements IRegexStringIterator {
 		m_strContext = strContext;
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator#err(priv.bajdcc.lexer.error.RegexException.RegexError)
+	/**
+	 * 字符解析组件
 	 */
+	protected RegexStringUtility m_Utility = new RegexStringUtility(this);
+
 	@Override
 	public void err(RegexError error) throws RegexException {
-		throw new RegexException(error, m_Data.m_iIndex);
+		throw new RegexException(error, m_Position);
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator#next()
-	 */
 	@Override
 	public void next() {
 		if (available()) {
 			advance();
 		}
 		translate();
+		m_Position.m_iColumn++;
+		if (m_Data.m_chCurrent == MetaType.NEW_LINE.getChar()) {
+			m_Position.m_iColumn = 0;
+			m_Position.m_iLine++;
+		}
 	}
 
-	/**
-	 * 翻译当前字符
-	 */
-	protected void translate() {
+	@Override
+	public Position position() {
+		return m_Position;
+	}
+
+	@Override
+	public void translate() {
 		if (!available()) {
 			m_Data.m_chCurrent = 0;
 			m_Data.m_kMeta = MetaType.END;
@@ -56,7 +81,7 @@ public class RegexStringIterator implements IRegexStringIterator {
 		m_Data.m_chCurrent = current();
 		transform();
 	}
-	
+
 	/**
 	 * 分析字符类型
 	 */
@@ -64,33 +89,31 @@ public class RegexStringIterator implements IRegexStringIterator {
 		m_Data.m_kMeta = MetaType.CHARACTER;
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator1#available()
-	 */
 	@Override
 	public boolean available() {
-		return m_Data.m_iIndex < m_strContext.length();
+		return m_Data.m_iIndex >= 0 && m_Data.m_iIndex < m_strContext.length();
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator1#advance()
-	 */
 	@Override
 	public void advance() {
 		m_Data.m_iIndex++;
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator1#current()
-	 */
 	@Override
 	public char current() {
 		return m_strContext.charAt(m_Data.m_iIndex);
 	}
 
-	/* （非 Javadoc）
-	 * @see priv.bajdcc.lexer.regex.IRegexStringIterator1#expect(priv.bajdcc.lexer.token.TokenUtility.MetaType, priv.bajdcc.lexer.error.RegexException.RegexError)
-	 */
+	@Override
+	public MetaType meta() {
+		return m_Data.m_kMeta;
+	}
+
+	@Override
+	public int index() {
+		return m_Data.m_iIndex;
+	}
+
 	@Override
 	public void expect(MetaType meta, RegexError error) throws RegexException {
 		if (m_Data.m_kMeta == meta) {
@@ -99,34 +122,33 @@ public class RegexStringIterator implements IRegexStringIterator {
 			err(error);
 		}
 	}
-}
 
-/**
- * 分析时使用的数据
- */
-class RegexStringIteratorData {
-	/**
-	 * 当前处理的位置
-	 */
-	public int m_iIndex = 0;
-
-	/**
-	 * 字符
-	 */
-	public char m_chCurrent = 0;
-
-	/**
-	 * 字符类型
-	 */
-	public MetaType m_kMeta = MetaType.END;
-
-	public RegexStringIteratorData() {
-
+	@Override
+	public void snapshot() {
+		m_stkIndex.push(m_Data.m_iIndex);
+		m_stkPosition.push(new Position(m_Position.m_iColumn, m_Position.m_iLine));
 	}
 
-	public RegexStringIteratorData(int index, char current, MetaType meta) {
-		m_iIndex = index;
-		m_chCurrent = current;
-		m_kMeta = meta;
+	@Override
+	public void cover() {
+		m_stkIndex.set(m_stkIndex.size() - 1, m_Data.m_iIndex);
+		m_stkPosition.set(m_stkPosition.size() - 1, m_Position);
+	}
+
+	@Override
+	public void restore() {
+		m_Data.m_iIndex = m_stkIndex.pop();
+		m_Position = m_stkPosition.pop();
+	}
+
+	@Override
+	public void discard() {
+		m_stkIndex.pop();
+		m_stkPosition.pop();
+	}
+
+	@Override
+	public RegexStringUtility utility() {
+		return m_Utility;
 	}
 }

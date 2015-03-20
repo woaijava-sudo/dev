@@ -2,6 +2,8 @@ package priv.bajdcc.lexer.token;
 
 /**
  * ²Ù×÷·û
+ * 
+ * @author bajdcc
  */
 public enum OperatorType {
 	ASSIGN("="), PLUS("+"), MINUS("-"), TIMES("*"), DIV("/"), MOD("%"), BIT_AND(
@@ -10,9 +12,9 @@ public enum OperatorType {
 	LPARAN("("), RPARAN(")"), LBRACE("{"), RBRACE("}"), LSQUARE("["), RSQUARE(
 			"]"), COMMA(","), DOT("."), SEMI(";"), COLON(":"),
 
-	EQ("=="), NEQ("!="), PLUS_PLUS("++"), MINUS_MINUS("--"), PLUS_ASSIGN(
-			"+="), MINUS_ASSIGN("-="), TIMES_ASSIGN("*="), DIV_ASSIGN("/="), NGT(
-			"<="), NLT(">="), LOGICAL_AND("&&"), LOGICAL_OR("||");
+	EQ("=="), NEQ("!="), PLUS_PLUS("++"), MINUS_MINUS("--"), PLUS_ASSIGN("+="), MINUS_ASSIGN(
+			"-="), TIMES_ASSIGN("*="), DIV_ASSIGN("/="), NGT("<="), NLT(">="), LOGICAL_AND(
+			"&&"), LOGICAL_OR("||");
 
 	private String name;
 

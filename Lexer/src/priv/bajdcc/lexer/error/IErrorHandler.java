@@ -6,5 +6,9 @@ package priv.bajdcc.lexer.error;
  * @author bajdcc
  */
 public interface IErrorHandler {
-
+	
+	/**
+	 * ´¦Àí´íÎó
+	 */
+	public void handleError();
 }

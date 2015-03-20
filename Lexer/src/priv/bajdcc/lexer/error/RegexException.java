@@ -1,5 +1,7 @@
 package priv.bajdcc.lexer.error;
 
+import priv.bajdcc.lexer.utility.Position;
+
 /**
  * 正则表达式生成过程中的异常
  * 
@@ -42,24 +44,24 @@ public class RegexException extends Exception {
 		}
 	};
 
-	public RegexException(RegexError error, int location) {
+	public RegexException(RegexError error, Position pos) {
 		super(error.getMessage());
-		m_iLocation = location;
+		m_Position = pos;
 		m_kError = error;
 	}
 
 	/**
 	 * 位置
 	 */
-	private int m_iLocation = -1;
-
+	private Position m_Position = new Position();
+	
 	/**
 	 * @return 错误位置
 	 */
-	public int getLocation() {
-		return m_iLocation;
+	public Position getPosition() {
+		return m_Position;
 	}
-
+	
 	/**
 	 * 错误类型
 	 */
