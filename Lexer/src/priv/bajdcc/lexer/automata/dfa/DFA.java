@@ -1,6 +1,7 @@
 package priv.bajdcc.lexer.automata.dfa;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -67,6 +68,15 @@ public class DFA extends NFA {
 		if (m_bDebug) {
 			System.out.println("#### 确定化 ####");
 			System.out.println(getDFAString());
+			System.out.println("#### 状态转移矩阵 ####");
+			System.out.println(getDFATableString());
+		}
+		minimization();
+		if (m_bDebug) {
+			System.out.println("#### 最小化 ####");
+			System.out.println(getDFAString());
+			System.out.println("#### 状态转移矩阵 ####");
+			System.out.println(getDFATableString());
 		}
 	}
 
@@ -86,6 +96,42 @@ public class DFA extends NFA {
 		begin.m_OutEdges.add(edge);// 添加进起始边的出边
 		end.m_InEdges.add(edge);// 添加进结束边的入边
 		return edge;
+	}
+
+	/**
+	 * 断开某个状态和某条边
+	 * 
+	 * @param status
+	 *            某状态
+	 * @param edge
+	 *            某条边
+	 */
+	protected void disconnect(DFAStatus status, DFAEdge edge) {
+		edge.m_Begin.m_OutEdges.remove(edge);
+		edge.m_End.m_InEdges.remove(edge);// 当前边的结束状态的入边集合去除当前边
+		m_EdgesPool.restore(edge);
+	}
+
+	/**
+	 * 断开某个状态和所有边
+	 * 
+	 * @param begin
+	 *            某状态
+	 */
+	protected void disconnect(DFAStatus status) {
+		/* 清除所有入边 */
+		for (Iterator<DFAEdge> it = status.m_InEdges.iterator(); it.hasNext();) {
+			DFAEdge edge = it.next();
+			it.remove();
+			disconnect(edge.m_Begin, edge);
+		}
+		/* 清除所有出边 */
+		for (Iterator<DFAEdge> it = status.m_OutEdges.iterator(); it.hasNext();) {
+			DFAEdge edge = it.next();
+			it.remove();
+			disconnect(status, edge);
+		}
+		m_StatusPool.restore(status);
 	}
 
 	/**
@@ -275,6 +321,155 @@ public class DFA extends NFA {
 	}
 
 	/**
+	 * DFA最小化
+	 */
+	private void minimization() {
+		/* 终态集合 */
+		ArrayList<Integer> finalStatus = new ArrayList<Integer>();
+		/* 非终态集合 */
+		ArrayList<Integer> nonFinalStatus = new ArrayList<Integer>();
+		/* DFA状态转移表，填充终态集合 */
+		int[][] transition = buildTransition(finalStatus);
+		/* 填充非终态集合和状态集合的哈希表 */
+		for (int i = 0; i < transition.length; i++) {
+			if (!finalStatus.contains(i)) {
+				nonFinalStatus.add(i);// 添加非终态序号
+			}
+		}
+		/* DFA状态表 */
+		ArrayList<DFAStatus> statusList = getDFATable();
+		/* 处理终态 */
+		mergeStatus(partition(finalStatus, transition), statusList);
+		/* 处理非终态 */
+		mergeStatus(partition(nonFinalStatus, transition), statusList);
+	}
+
+	/**
+	 * 最小化划分
+	 * 
+	 * @param statusList
+	 *            初始划分
+	 * @param transition
+	 *            状态转移表
+	 * @return 划分
+	 */
+	private ArrayList<ArrayList<Integer>> partition(
+			ArrayList<Integer> statusList, int[][] transition) {
+		if (statusList.size() == 1) {
+			/* 存放结果 */
+			ArrayList<ArrayList<Integer>> pat = new ArrayList<ArrayList<Integer>>();
+			pat.add(new ArrayList<Integer>(statusList.get(0)));
+			return pat;
+		} else {
+			/* 用于查找相同状态 */
+			HashMap<String, ArrayList<Integer>> map = new HashMap<String, ArrayList<Integer>>();
+			for (int status : statusList) {
+				/* 获得状态hash */
+				String hash = getStatusLineString(transition[status]);
+				/* 状态是否出现过 */
+				if (map.containsKey(hash)) {
+					/* 状态重复，加入上个相同状态的集合 */
+					map.get(hash).add(status);
+				} else {
+					/* 前次出现，创建数组保存它 */
+					ArrayList<Integer> set = new ArrayList<Integer>();
+					set.add(status);
+					map.put(hash, set);
+				}
+			}
+			return new ArrayList<ArrayList<Integer>>(map.values());
+		}
+	}
+
+	/**
+	 * 合并相同状态
+	 * 
+	 * @param pat
+	 *            状态划分
+	 * @param statusList
+	 *            状态转移表
+	 */
+	private void mergeStatus(ArrayList<ArrayList<Integer>> pat,
+			ArrayList<DFAStatus> statusList) {
+		/* 保存要处理的多状态合并的划分 */
+		ArrayList<ArrayList<Integer>> dealWith = new ArrayList<ArrayList<Integer>>();
+		for (ArrayList<Integer> collection : pat) {
+			if (collection.size() > 1) {// 有多个状态
+				dealWith.add(collection);
+			}
+		}
+		/* 合并每一分组 */
+		for (ArrayList<Integer> collection : dealWith) {
+			/* 目标状态为集合中第一个状态，其余状态被合并 */
+			int dstStatus = collection.get(0);
+			/* 目标状态 */
+			DFAStatus status = statusList.get(dstStatus);
+			for (int i = 1; i < collection.size(); i++) {
+				/* 重复的状态 */
+				int srcStatus = collection.get(i);
+				DFAStatus dupStatus = statusList.get(srcStatus);
+				/* 备份重复状态的入边 */
+				ArrayList<DFAEdge> edges = new ArrayList<DFAEdge>(
+						dupStatus.m_InEdges);
+				/* 将指向重复状态的边改为指向目标状态的边 */
+				for (DFAEdge edge : edges) {
+					/* 复制边 */
+					connect(edge.m_Begin, status).m_Data = edge.m_Data;
+				}
+				/* 去除重复状态 */
+				disconnect(dupStatus);
+			}
+		}
+	}
+
+	/**
+	 * 获取DFA状态转移表某行的字符串
+	 * 
+	 * @param line
+	 *            某行的索引矩阵
+	 * @return 哈希字符串
+	 */
+	private String getStatusLineString(int[] line) {
+		StringBuilder sb = new StringBuilder();
+		for (int i : line) {
+			sb.append(i + ",");
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 建立状态
+	 * 
+	 * @param finalStatus
+	 * @return 状态转换矩阵
+	 */
+	public int[][] buildTransition(Collection<Integer> finalStatus) {
+		finalStatus.clear();
+		/* DFA状态表 */
+		ArrayList<DFAStatus> statusList = getDFATable();
+		/* 建立状态转移矩阵 */
+		int[][] transition = new int[statusList.size()][m_Map.getRanges()
+				.size()];
+		/* 填充状态转移表 */
+		for (int i = 0; i < statusList.size(); i++) {
+			DFAStatus status = statusList.get(i);
+			if (status.m_Data.m_bFinal) {
+				finalStatus.add(i);// 标记终态
+			}
+			for (int j = 0; j < transition[i].length; j++) {
+				transition[i][j] = -1;// 置无效标记-1
+			}
+			for (DFAEdge edge : status.m_OutEdges) {
+				if (edge.m_Data.m_Action == EdgeType.CHARSET) {
+					transition[i][edge.m_Data.m_Param] = statusList
+							.indexOf(edge.m_End);
+				}
+			}
+		}
+		return transition;
+	}
+
+	/**
 	 * 提供DFA描述
 	 */
 	private String getDFAString() {
@@ -309,6 +504,21 @@ public class DFA extends NFA {
 				}
 				sb.append(System.getProperty("line.separator"));
 			}
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * 获取状态转移矩阵描述
+	 */
+	public String getDFATableString() {
+		int[][] transition = buildTransition(new ArrayList<Integer>());
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < transition.length; i++) {
+			for (int j = 0; j < transition[i].length; j++) {
+				sb.append("\t" + transition[i][j]);
+			}
+			sb.append(System.getProperty("line.separator"));
 		}
 		return sb.toString();
 	}

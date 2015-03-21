@@ -1,16 +1,12 @@
 package priv.bajdcc.lexer.regex;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import priv.bajdcc.lexer.stringify.RegexToString;
 import priv.bajdcc.lexer.token.TokenUtility;
 import priv.bajdcc.lexer.token.MetaType;
-import priv.bajdcc.lexer.automata.EdgeType;
 import priv.bajdcc.lexer.automata.dfa.DFA;
-import priv.bajdcc.lexer.automata.dfa.DFAEdge;
-import priv.bajdcc.lexer.automata.dfa.DFAStatus;
 import priv.bajdcc.lexer.error.RegexException;
 import priv.bajdcc.lexer.error.RegexException.RegexError;
 
@@ -103,10 +99,6 @@ public class Regex extends RegexStringIterator {
 		m_DFA = new DFA(m_Expression, m_bDebug);
 		/* DFA Transfer Table */
 		buildTransition();
-		if (m_bDebug) {
-			System.out.println("#### 状态转移矩阵 ####");
-			System.out.println(getDFATableString());
-		}
 	}
 
 	/**
@@ -115,26 +107,8 @@ public class Regex extends RegexStringIterator {
 	private void buildTransition() {
 		/* 字符区间映射表 */
 		m_Map = m_DFA.getCharacterMap();
-		/* DFA状态表 */
-		ArrayList<DFAStatus> statusList = m_DFA.getDFATable();
-		/* 分配空间 */
-		m_Transition = new int[statusList.size()][m_Map.getRanges().size()];
-		/* 填充状态转移表 */
-		for (int i = 0; i < statusList.size(); i++) {
-			DFAStatus status = statusList.get(i);
-			if (status.m_Data.m_bFinal) {
-				m_FinalStatus.add(i);// 标记终态
-			}
-			for (int j = 0; j < m_Transition[i].length; j++) {
-				m_Transition[i][j] = -1;// 置无效标记-1
-			}
-			for (DFAEdge edge : status.m_OutEdges) {
-				if (edge.m_Data.m_Action == EdgeType.CHARSET) {
-					m_Transition[i][edge.m_Data.m_Param] = statusList
-							.indexOf(edge.m_End);
-				}
-			}
-		}
+		/* DFA状态转移表 */
+		m_Transition = m_DFA.buildTransition(m_FinalStatus);
 	}
 
 	/**
@@ -520,19 +494,5 @@ public class Regex extends RegexStringIterator {
 	 */
 	public String getNFAString() {
 		return m_DFA.getNFAString();
-	}
-
-	/**
-	 * 获取状态转移矩阵描述
-	 */
-	public String getDFATableString() {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < m_Transition.length; i++) {
-			for (int j = 0; j < m_Transition[i].length; j++) {
-				sb.append("\t" + m_Transition[i][j]);
-			}
-			sb.append(System.getProperty("line.separator"));
-		}
-		return sb.toString();
 	}
 }
