@@ -1,0 +1,56 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Test - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x804 /fo"Debug/Test.res" /d "_DEBUG" "F:\VC++\WAVE\wave 10.0\Test.rc"" 
+Creating temporary file "C:\Users\y470\AppData\Local\Temp\RSP63CA.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FR"Debug/" /Fp"Debug/Test.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"F:\VC++\WAVE\wave 10.0\Map.cpp"
+"F:\VC++\WAVE\wave 10.0\Test.cpp"
+"F:\VC++\WAVE\wave 10.0\Timer.cpp"
+]
+Creating command line "cl.exe @C:\Users\y470\AppData\Local\Temp\RSP63CA.tmp" 
+Creating temporary file "C:\Users\y470\AppData\Local\Temp\RSP63CB.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FR"Debug/" /Fp"Debug/Test.pch" /Yc"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"F:\VC++\WAVE\wave 10.0\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\Users\y470\AppData\Local\Temp\RSP63CB.tmp" 
+Creating temporary file "C:\Users\y470\AppData\Local\Temp\RSP63CC.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /incremental:yes /pdb:"Debug/Test.pdb" /debug /machine:I386 /out:"Debug/Test.exe" /pdbtype:sept 
+".\Debug\Map.obj"
+".\Debug\StdAfx.obj"
+".\Debug\Test.obj"
+".\Debug\Timer.obj"
+".\Debug\Test.res"
+]
+Creating command line "link.exe @C:\Users\y470\AppData\Local\Temp\RSP63CC.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+Map.cpp
+F:\VC++\WAVE\wave 10.0\Map.cpp(151) : warning C4305: '/=' : truncation from 'const double' to 'float'
+F:\VC++\WAVE\wave 10.0\Map.cpp(152) : warning C4305: '/=' : truncation from 'const double' to 'float'
+Test.cpp
+Timer.cpp
+Generating Code...
+Linking...
+Creating command line "bscmake.exe /nologo /o"Debug/Test.bsc"  ".\Debug\StdAfx.sbr" ".\Debug\Map.sbr" ".\Debug\Test.sbr" ".\Debug\Timer.sbr""
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+Test.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

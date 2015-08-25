@@ -7,3 +7,12 @@ Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\
 Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Release\进程模拟调度.csproj.GenerateResource.Cache
 Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Release\SimuProcessSchd.exe
 Z:\【课程作业】\工程\操作系统\进程模拟调度\进程模拟调度\obj\Release\SimuProcessSchd.pdb
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\SimuProcessSchd.exe
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\SimuProcessSchd.pdb
+Z:\GitHub\dev\ProcSimu\进程模拟调度\bin\Release\SimuProcessSchd.exe
+Z:\GitHub\dev\ProcSimu\进程模拟调度\bin\Release\SimuProcessSchd.pdb
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\进程模拟调度.csprojResolveAssemblyReference.cache
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\SimuProcessSchd.SettingDialog.resources
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\SimuProcessSchd.SimuDialog.resources
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\SimuProcessSchd.Properties.Resources.resources
+Z:\GitHub\dev\ProcSimu\进程模拟调度\obj\Release\进程模拟调度.csproj.GenerateResource.Cache
