@@ -1,0 +1,1 @@
+celery -A download worker --loglevel=INFO
