@@ -1,3 +1,4 @@
+
 dev
 ===
 
@@ -22,3 +23,5 @@ something interesting
 - automaze：迷宫搜索（C#）
 - autogenpaper：在线组卷（MVC）
 - alarmservice：整点报时（C# Service）
+- compiler/codesim：C语言代码相似度检测（C#）
+- compiler/front：C语言编译器前端（C#）
