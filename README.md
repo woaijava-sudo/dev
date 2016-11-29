@@ -25,3 +25,6 @@ something interesting
 - alarmservice：整点报时（C# Service）
 - compiler/codesim：C语言代码相似度检测（C#）
 - compiler/front：C语言编译器前端（C#）
+- api/music：在线听歌（H5）
+- api/kp：跨屏穿越（H5）
+- api/reader：小说在线阅读（PHP）
